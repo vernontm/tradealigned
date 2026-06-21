@@ -1,0 +1,41 @@
+# --- secrets ---
+.env
+.env.*
+!.env.example
+
+# --- python ---
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# --- node ---
+node_modules/
+.next/
+.turbo/
+.vercel/
+*.tsbuildinfo
+next-env.d.ts
+
+# --- build / cache / logs ---
+.cache/
+dist/
+out/
+build/
+coverage/
+*.log
+
+# --- runtime data (transcripts, models, downloads) ---
+transcripts/
+trades/
+clips/
+downloads/
+
+# --- macOS ---
+.DS_Store
+._*
+
+# --- editor ---
+.vscode/
+.idea/
