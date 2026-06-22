@@ -5,6 +5,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
+  Maximize,
+  Minimize,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -46,6 +48,7 @@ export function LessonPlayer({
   const videoRef = useRef<HTMLVideoElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const lastSaved = useRef<number>(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Fetch a signed URL for the video
   useEffect(() => {
@@ -84,46 +87,41 @@ export function LessonPlayer({
     return () => v.removeEventListener("loadedmetadata", onLoaded);
   }, [src, initialPosition]);
 
-  // Keep the watermark visible in fullscreen.
-  //
-  // The native fullscreen button on <video> elevates only the video element,
-  // dropping the absolutely-positioned watermark out of view. We intercept the
-  // fullscreenchange event: when the video itself is the fullscreen element,
-  // exit and re-request fullscreen on the wrapper div (which contains both
-  // the <video> and the watermark). The swap happens within one frame so the
-  // user feels a single fullscreen action.
-  //
-  // iOS Safari's <video> fullscreen is a native player and cannot be
-  // overridden, the watermark will not appear there. On every other browser
-  // (Chrome, Firefox, Edge, desktop Safari) the wrapper-fullscreen path keeps
-  // the watermark on screen.
-  useEffect(() => {
-    if (!src) return;
-    const video = videoRef.current;
+  // Fullscreen on the WRAPPER (which contains both <video> and the watermark)
+  // so the watermark stays visible. We use a custom button instead of the
+  // native <video> fullscreen control: the old approach intercepted the
+  // native button and tried exitFullscreen()→requestFullscreen() in sequence,
+  // but the re-request lands outside the user-gesture window and browsers
+  // reject it, leaving the user in NO fullscreen at all. Requesting directly
+  // from a click handler keeps the gesture intact.
+  const toggleFullscreen = useCallback(async () => {
     const wrapper = wrapperRef.current;
-    if (!video || !wrapper) return;
-    let swapping = false;
-    const onFsChange = async () => {
-      if (swapping) return;
-      const fsEl = document.fullscreenElement;
-      if (fsEl === video) {
-        swapping = true;
-        try {
-          await document.exitFullscreen();
-          if (wrapper.requestFullscreen) {
-            await wrapper.requestFullscreen();
-          }
-        } catch {
-          // ignored, some browsers reject the chained call; the user can
-          // click the fullscreen button again.
-        } finally {
-          swapping = false;
-        }
+    if (!wrapper) return;
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else if (wrapper.requestFullscreen) {
+        await wrapper.requestFullscreen();
+      } else {
+        // iOS Safari: no Element.requestFullscreen — fall back to the native
+        // video player fullscreen (watermark won't show, but it works).
+        const v = videoRef.current as
+          | (HTMLVideoElement & { webkitEnterFullscreen?: () => void })
+          | null;
+        v?.webkitEnterFullscreen?.();
       }
-    };
+    } catch {
+      // Some browsers reject if not in a gesture; the button is in one, so
+      // this is rare. Swallow and let the user retry.
+    }
+  }, []);
+
+  // Track fullscreen state so the button icon reflects it.
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener("fullscreenchange", onFsChange);
     return () => document.removeEventListener("fullscreenchange", onFsChange);
-  }, [src]);
+  }, []);
 
   const persist = useCallback(
     (positionSec: number, complete: boolean) => {
@@ -209,11 +207,27 @@ export function LessonPlayer({
           <ChevronLeft className="h-3 w-3" />
           back to course
         </Link>
-        {positionLabel && (
-          <span className="font-mono text-[10px] text-zinc-500">
-            {positionLabel}
-          </span>
-        )}
+        <div className="flex items-center gap-3">
+          {positionLabel && (
+            <span className="font-mono text-[10px] text-zinc-500">
+              {positionLabel}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            title={isFullscreen ? "exit fullscreen" : "fullscreen"}
+            aria-label={isFullscreen ? "exit fullscreen" : "fullscreen"}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-zinc-900/60 px-2.5 py-1 text-[11px] font-medium text-zinc-300 transition hover:border-emerald-400/40 hover:bg-emerald-500/10 hover:text-emerald-200"
+          >
+            {isFullscreen ? (
+              <Minimize className="h-3.5 w-3.5" strokeWidth={2} />
+            ) : (
+              <Maximize className="h-3.5 w-3.5" strokeWidth={2} />
+            )}
+            {isFullscreen ? "exit" : "fullscreen"}
+          </button>
+        </div>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -239,7 +253,7 @@ export function LessonPlayer({
                   ref={videoRef}
                   src={src}
                   controls
-                  controlsList="nodownload"
+                  controlsList="nodownload nofullscreen"
                   onContextMenu={(e) => e.preventDefault()}
                   preload="metadata"
                   onTimeUpdate={onTimeUpdate}
@@ -247,6 +261,20 @@ export function LessonPlayer({
                   className="block aspect-video w-full"
                 />
                 <VideoWatermark />
+                {/* Exit button lives INSIDE the wrapper so it's reachable while
+                    the wrapper is the fullscreen element (the chrome-bar button
+                    isn't part of the fullscreen subtree). Escape also works. */}
+                {isFullscreen && (
+                  <button
+                    type="button"
+                    onClick={toggleFullscreen}
+                    title="exit fullscreen"
+                    aria-label="exit fullscreen"
+                    className="absolute right-3 top-3 z-10 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-black/60 text-white/90 ring-1 ring-white/15 backdrop-blur transition hover:bg-black/80 hover:text-white"
+                  >
+                    <Minimize className="h-4 w-4" strokeWidth={2} />
+                  </button>
+                )}
               </>
             )}
           </div>
