@@ -19,7 +19,38 @@ export type ChatSession = {
 const INDEX_KEY = "ray-ai-chats.index.v1";
 const SESSION_KEY_PREFIX = "ray-ai-chats.session.";
 const ACTIVE_KEY = "ray-ai-chats.active.v1";
+const PREVIEW_KEY_PREFIX = "ray-ai-chats.preview.";
 const MAX_SESSIONS = 50;
+
+/**
+ * Preview cards (trade / lesson result tiles that show alongside the chat)
+ * are saved per session so revisiting an old thread brings them back. Stored
+ * as opaque JSON because the shape lives in app/chat/page.tsx and we don't
+ * want a circular dependency.
+ */
+export function loadPreview(sessionId: string): unknown[] {
+  if (typeof window === "undefined") return [];
+  return safeParse<unknown[]>(
+    window.localStorage.getItem(PREVIEW_KEY_PREFIX + sessionId),
+    []
+  );
+}
+
+export function savePreview(sessionId: string, cards: unknown[]) {
+  if (typeof window === "undefined") return;
+  try {
+    if (cards.length === 0) {
+      window.localStorage.removeItem(PREVIEW_KEY_PREFIX + sessionId);
+    } else {
+      window.localStorage.setItem(
+        PREVIEW_KEY_PREFIX + sessionId,
+        JSON.stringify(cards)
+      );
+    }
+  } catch {
+    // localStorage may throw on quota; preview cards are best-effort.
+  }
+}
 
 function safeParse<T>(raw: string | null, fallback: T): T {
   if (!raw) return fallback;

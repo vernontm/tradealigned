@@ -4,6 +4,7 @@ import {
   ExternalLink,
   Film,
   Gem,
+  Heart,
   Image as ImageIcon,
   Loader2,
   Lock,
@@ -15,7 +16,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { useHasPaidAccess } from "@/lib/use-current-user";
+import { useCurrentUser, useHasPaidAccess } from "@/lib/use-current-user";
 
 // Free accounts can preview a small handful of gems unblurred. Items beyond
 // this index render with a blur overlay + upgrade CTA.
@@ -40,6 +41,7 @@ type GemRow = {
 
 type ListResponse = {
   gems: GemRow[];
+  favorited_ids?: string[];
   total: number;
   page: number;
   page_size: number;
@@ -52,8 +54,11 @@ export function GemsView() {
   // "free" so we never accidentally flash the full library to a free user.
   const hasPaidAccess = useHasPaidAccess();
   const isLocked = hasPaidAccess !== true;
+  const { actualRole } = useCurrentUser();
+  const isAdmin = actualRole === "admin";
 
   const [data, setData] = useState<ListResponse | null>(null);
+  const [favorited, setFavorited] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [search, setSearch] = useState("");
@@ -67,6 +72,7 @@ export function GemsView() {
       const r = await fetch(`/api/gems?${p.toString()}`);
       const j = (await r.json()) as ListResponse;
       setData(j);
+      setFavorited(new Set(j.favorited_ids ?? []));
     } finally {
       setLoading(false);
     }
@@ -87,10 +93,40 @@ export function GemsView() {
         ...j,
         gems: [...data.gems, ...j.gems],
       });
+      setFavorited((prev) => {
+        const next = new Set(prev);
+        for (const id of j.favorited_ids ?? []) next.add(id);
+        return next;
+      });
     } finally {
       setLoadingMore(false);
     }
   }, [data, loadingMore, search]);
+
+  const toggleFavorite = useCallback(async (gemId: string) => {
+    // Optimistic flip — endpoint will reconcile and any 4xx/5xx rolls back.
+    const wasFavorited = favorited.has(gemId);
+    setFavorited((prev) => {
+      const next = new Set(prev);
+      if (wasFavorited) next.delete(gemId);
+      else next.add(gemId);
+      return next;
+    });
+    try {
+      const r = await fetch(`/api/gems/${gemId}/favorite`, {
+        method: wasFavorited ? "DELETE" : "POST",
+      });
+      if (!r.ok) throw new Error(`fav toggle ${r.status}`);
+    } catch (e) {
+      console.error("favorite toggle failed", e);
+      setFavorited((prev) => {
+        const next = new Set(prev);
+        if (wasFavorited) next.add(gemId);
+        else next.delete(gemId);
+        return next;
+      });
+    }
+  }, [favorited]);
 
   useEffect(() => {
     const t = setTimeout(loadFirstPage, search ? 250 : 0);
@@ -174,6 +210,9 @@ export function GemsView() {
                     >
                       <GemCard
                         gem={g}
+                        canDelete={isAdmin}
+                        isFavorited={favorited.has(g.id)}
+                        onToggleFavorite={() => toggleFavorite(g.id)}
                         onDelete={() => handleDelete(g.id)}
                       />
                     </div>
@@ -226,9 +265,15 @@ export function GemsView() {
 function GemCard({
   gem: initial,
   onDelete,
+  canDelete,
+  isFavorited,
+  onToggleFavorite,
 }: {
   gem: GemRow;
   onDelete: () => void;
+  canDelete: boolean;
+  isFavorited: boolean;
+  onToggleFavorite: () => void;
 }) {
   const [gem, setGem] = useState<GemRow>(initial);
   const [mode, setMode] = useState<"clip" | "image">(
@@ -308,14 +353,35 @@ function GemCard({
             )}
           </div>
         </div>
-        <button
-          type="button"
-          onClick={onDelete}
-          className="rounded-md p-1 text-zinc-400 hover:bg-rose-500/15 hover:text-rose-400"
-          title="delete gem"
-        >
-          <Trash2 className="h-3.5 w-3.5" strokeWidth={2} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={onToggleFavorite}
+            className={`rounded-md p-1 transition ${
+              isFavorited
+                ? "text-rose-300 hover:bg-rose-500/15"
+                : "text-zinc-500 hover:bg-white/5 hover:text-rose-300"
+            }`}
+            title={isFavorited ? "unfavorite" : "favorite"}
+            aria-pressed={isFavorited}
+          >
+            <Heart
+              className="h-3.5 w-3.5"
+              strokeWidth={2}
+              fill={isFavorited ? "currentColor" : "none"}
+            />
+          </button>
+          {canDelete && (
+            <button
+              type="button"
+              onClick={onDelete}
+              className="rounded-md p-1 text-zinc-400 hover:bg-rose-500/15 hover:text-rose-400"
+              title="delete gem (admin only)"
+            >
+              <Trash2 className="h-3.5 w-3.5" strokeWidth={2} />
+            </button>
+          )}
+        </div>
       </div>
 
       {(img || clip) && (

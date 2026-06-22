@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import Markdown from "react-markdown";
 import type { UIMessage } from "ai";
 import { CREDIT_COSTS } from "@/lib/credit-costs";
 import {
@@ -612,8 +613,33 @@ function MessageBubble({ m }: { m: UIMessage }) {
     );
   }
   return (
-    <div className="max-w-[90%] whitespace-pre-wrap rounded-2xl rounded-bl-md border border-white/10 bg-zinc-900/60 px-3.5 py-2.5 text-sm leading-relaxed text-zinc-200 shadow-sm">
-      {text}
+    <div className="max-w-[90%] rounded-2xl rounded-bl-md border border-white/10 bg-zinc-900/60 px-3.5 py-2.5 text-sm leading-relaxed text-zinc-200 shadow-sm">
+      <Markdown
+        components={{
+          // Render markdown emphasis as actual bold/italic, paragraphs as
+          // tight blocks (chat doesn't want big <p> spacing).
+          p: ({ children }) => (
+            <p className="mb-2 last:mb-0 whitespace-pre-wrap">{children}</p>
+          ),
+          strong: ({ children }) => (
+            <strong className="font-bold text-white">{children}</strong>
+          ),
+          em: ({ children }) => <em className="italic">{children}</em>,
+          code: ({ children }) => (
+            <code className="rounded bg-zinc-800/80 px-1 py-0.5 text-[12px] text-emerald-200">
+              {children}
+            </code>
+          ),
+          ul: ({ children }) => (
+            <ul className="mb-2 ml-4 list-disc space-y-1 last:mb-0">{children}</ul>
+          ),
+          ol: ({ children }) => (
+            <ol className="mb-2 ml-4 list-decimal space-y-1 last:mb-0">{children}</ol>
+          ),
+        }}
+      >
+        {text}
+      </Markdown>
     </div>
   );
 }

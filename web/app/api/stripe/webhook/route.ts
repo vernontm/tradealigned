@@ -18,7 +18,7 @@ async function sendWelcomeEmail(email: string, planId: RayAiPlanId) {
   const isTrial = planId === "trial";
   const heading = isTrial
     ? "You're in. 7 days of full access, on us."
-    : "Welcome to Trade Aligned.";
+    : "Welcome to Ray AI.";
   const body = isTrial
     ? `<p>Your free trial is live. For the next 7 days you have the full platform unlocked: AI Mentor, Drill Arcade, every gem, live trade calls, and weekly progress reports.</p>
 <p>On day 8 your card auto-renews at $29.99/mo. Cancel any time before then with one click from your billing page and you're never charged.</p>
@@ -29,8 +29,8 @@ async function sendWelcomeEmail(email: string, planId: RayAiPlanId) {
   await sendEmail({
     to: email,
     subject: isTrial
-      ? "Your Trade Aligned trial is live"
-      : "Welcome to Trade Aligned",
+      ? "Your Ray AI trial is live"
+      : "Welcome to Ray AI",
     html: brandedEmail({
       preheader: isTrial
         ? "7 days of full access, free. Cancel anytime."

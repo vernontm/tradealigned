@@ -20,18 +20,11 @@ type Student = {
   isYou?: boolean;
 };
 
-const STUDENTS: Student[] = [
-  { handle: "@taylor_fx", discord: "taylor_fx", city: "Houston, TX", accuracy: 84, drills: 312, streak: 18, bestMode: "Sniper Mode", joined: "2026-03-12", avatarHue: 160 },
-  { handle: "@nas_killa", discord: "naskilla", city: "Atlanta, GA", accuracy: 79, drills: 248, streak: 11, bestMode: "Setup Quiz", joined: "2026-04-04", avatarHue: 220 },
-  { handle: "@vix_hunter", discord: "vix.hunter", city: "Brooklyn, NY", accuracy: 76, drills: 189, streak: 7, bestMode: "Replay / Predict", joined: "2026-02-22", avatarHue: 30 },
-  { handle: "@eu_sniper", discord: "eusniper", city: "London, UK", accuracy: 73, drills: 421, streak: 9, bestMode: "Sniper Mode", joined: "2026-01-08", avatarHue: 280 },
-  { handle: "@oil_jay", discord: "oiljay", city: "Dubai, UAE", accuracy: 71, drills: 162, streak: 5, bestMode: "Setup Quiz", joined: "2026-05-01", avatarHue: 60 },
-  { handle: "@coffee_breaker", discord: "coffeebreaker", city: "São Paulo", accuracy: 69, drills: 145, streak: 12, bestMode: "Speed Read", joined: "2026-04-18", avatarHue: 0 },
-  { handle: "@asia_session", discord: "asiasession", city: "Singapore", accuracy: 67, drills: 198, streak: 4, bestMode: "Setup Quiz", joined: "2026-03-30", avatarHue: 140 },
-  { handle: "@gold_only", discord: "gold.only", city: "Phoenix, AZ", accuracy: 62, drills: 108, streak: 3, bestMode: "Speed Read", joined: "2026-05-22", avatarHue: 45 },
-  { handle: "@reset_or_run", discord: "resetorrun", city: "Toronto, ON", accuracy: 58, drills: 92, streak: 6, bestMode: "Replay / Predict", joined: "2026-05-30", avatarHue: 200 },
-  { handle: "@ob_obsessed", city: "Miami, FL", accuracy: 55, drills: 77, streak: 2, bestMode: "Replay / Predict", joined: "2026-06-02", avatarHue: 320 },
-];
+// Demo students removed pending cross-user sync. The leaderboard now renders
+// only the local user's row (if profile is set) so the page no longer ships
+// fabricated handles like "@taylor_fx" / "@eu_sniper". When auth + per-user
+// stats are wired, populate STUDENTS from the server.
+const STUDENTS: Student[] = [];
 
 /** Build the local user's Student row from their profile + drill stats. */
 function buildYouRow(profile: Profile): Student | null {
@@ -129,10 +122,12 @@ export function CommunityView() {
               drill stats, no shortcuts, no fake streaks.
             </p>
           </div>
-          <div className="hidden sm:flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold text-emerald-300">
-            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
-            {all.length} active
-          </div>
+          {ranked.length > 0 && (
+            <div className="hidden sm:flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold text-emerald-300">
+              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+              {ranked.length} active
+            </div>
+          )}
         </div>
 
         {/* CTA, link Discord */}
@@ -155,55 +150,68 @@ export function CommunityView() {
           </div>
         )}
 
-        {/* KPI strip */}
-        <div className="grid gap-3 sm:grid-cols-3">
-          <Kpi
-            label="room avg accuracy"
-            value={`${avgAccuracy}%`}
-            sub="across all drill modes"
-            tone="emerald"
-          />
-          <Kpi
-            label="drills this week"
-            value={totalDrills.toLocaleString()}
-            sub="combined"
-            tone="sky"
-          />
-          <Kpi
-            label="top streak"
-            value={`${Math.max(...all.map((s) => s.streak))} 🔥`}
-            sub={ranked[0].handle}
-            tone="rose"
-          />
-        </div>
-
-        {/* Top 3 podium */}
-        <div className="grid gap-3 sm:grid-cols-3">
-          {ranked.slice(0, 3).map((s, i) => (
-            <PodiumCard key={s.handle} student={s} rank={i + 1} />
-          ))}
-        </div>
-
-        {/* Full leaderboard */}
-        <div className="rounded-2xl bg-zinc-900/60 ring-1 ring-white/10">
-          <div className="grid grid-cols-12 gap-3 border-b border-white/10 px-5 py-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-            <div className="col-span-1">#</div>
-            <div className="col-span-3">student</div>
-            <div className="col-span-3">Discord</div>
-            <div className="col-span-1">acc</div>
-            <div className="col-span-1">drills</div>
-            <div className="col-span-1">streak</div>
-            <div className="col-span-2">strongest</div>
+        {ranked.length === 0 ? (
+          <div className="rounded-2xl border border-white/10 bg-zinc-900/60 p-8 text-center">
+            <Trophy className="mx-auto h-8 w-8 text-emerald-300" strokeWidth={1.5} />
+            <h3 className="mt-3 text-base font-semibold text-zinc-100">
+              the leaderboard is just getting started
+            </h3>
+            <p className="mx-auto mt-1.5 max-w-md text-xs leading-relaxed text-zinc-500">
+              run a few drills and link your Discord from{" "}
+              <Link href="/account" className="text-emerald-300 underline-offset-2 hover:underline">
+                your account
+              </Link>{" "}
+              to claim a spot on the board. once more students join, this
+              page fills out with live stats.
+            </p>
           </div>
-          {ranked.map((s, i) => (
-            <Row key={`${s.handle}-${s.isYou ? "you" : "demo"}`} student={s} rank={i + 1} />
-          ))}
-        </div>
+        ) : (
+          <>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Kpi
+                label="room avg accuracy"
+                value={`${avgAccuracy}%`}
+                sub="across all drill modes"
+                tone="emerald"
+              />
+              <Kpi
+                label="drills this week"
+                value={totalDrills.toLocaleString()}
+                sub="combined"
+                tone="sky"
+              />
+              <Kpi
+                label="top streak"
+                value={`${Math.max(...ranked.map((s) => s.streak))} 🔥`}
+                sub={ranked[0].handle}
+                tone="rose"
+              />
+            </div>
 
-        <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.03] px-4 py-3 text-[11px] text-zinc-500">
-          showing demo data for now. once auth + cross-user sync lands, this
-          board renders the real TGFX Academy community in real time.
-        </div>
+            {ranked.length >= 3 && (
+              <div className="grid gap-3 sm:grid-cols-3">
+                {ranked.slice(0, 3).map((s, i) => (
+                  <PodiumCard key={s.handle} student={s} rank={i + 1} />
+                ))}
+              </div>
+            )}
+
+            <div className="rounded-2xl bg-zinc-900/60 ring-1 ring-white/10">
+              <div className="grid grid-cols-12 gap-3 border-b border-white/10 px-5 py-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                <div className="col-span-1">#</div>
+                <div className="col-span-3">student</div>
+                <div className="col-span-3">Discord</div>
+                <div className="col-span-1">acc</div>
+                <div className="col-span-1">drills</div>
+                <div className="col-span-1">streak</div>
+                <div className="col-span-2">strongest</div>
+              </div>
+              {ranked.map((s, i) => (
+                <Row key={s.handle} student={s} rank={i + 1} />
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

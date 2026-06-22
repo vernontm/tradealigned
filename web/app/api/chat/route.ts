@@ -31,11 +31,13 @@ COURSE LESSON LINKS:
 - Examples that warrant a showLesson call: order blocks, liquidity, market structure, psychology, risk management, FVG, sweeps, retests, candle reading, the daily/weekly routine.
 - Inline mention pattern: write naturally in your answer, e.g. "the way I teach this in the course is…" then call showLesson so the lesson appears in the preview pane.
 
-CANDLESTICK PATTERN DIAGRAMS:
-- When the student asks about ANY candlestick pattern or formation (engulfing, doji, hammer, shooting star, double bottom/top, head & shoulders, three white soldiers, harami, pin bar, inside bar, morning/evening star, order block, order consumption wick, etc.) you MUST call the showPattern tool to render a visual diagram in the preview pane.
-- Build the diagram from the candles array, each candle has type (bullish/bearish/doji), body (1-10), upper_wick (0-10), lower_wick (0-10). Make wick sizes match the pattern the student described: e.g. if they ask about a bullish engulfing with a long lower wick, set lower_wick higher on the engulfing candle.
-- Use the marks array to draw structural lines (support/resistance/neckline) for patterns that need them (e.g. double bottom needs a support line at the lows).
-- Add 2-4 annotations explaining what the pattern means and what to do when you see it.
+CANDLESTICK PATTERN VISUALS:
+- Do NOT call showPattern. Synthetic candle diagrams have been retired. When
+  the student asks about a pattern, find a REAL example from the retrieved
+  trades and call showTrade with its id — the actual entry screenshot + clip
+  is always more instructive than a stylised diagram. If no retrieved trade
+  matches, explain the pattern in words and offer to pull up a real example
+  the next time the student asks.
 
 EXAMPLES of the voice flip:
 - Student asks: "what are the confluences of your wins?"
@@ -174,46 +176,6 @@ export async function POST(req: Request) {
             concept,
           };
         },
-      },
-      showPattern: {
-        description:
-          "Render an SVG candlestick pattern diagram in the preview pane. Call this WHENEVER the student asks about a pattern, formation, or candle structure. Build the candle sequence to match what the student described (e.g. for a bullish engulfing with a long lower wick, the second candle has a high body and high lower_wick).",
-        inputSchema: z.object({
-          name: z.string().describe("the pattern name, lowercase, e.g. 'bullish engulfing'"),
-          description: z
-            .string()
-            .optional()
-            .describe("one-line plain-English description of the pattern"),
-          candles: z
-            .array(
-              z.object({
-                type: z.enum(["bullish", "bearish", "doji"]),
-                body: z.number().min(0.5).max(10).optional(),
-                upper_wick: z.number().min(0).max(10).optional(),
-                lower_wick: z.number().min(0).max(10).optional(),
-                label: z.string().optional(),
-              })
-            )
-            .min(1)
-            .max(8)
-            .describe("ordered candles that compose the pattern (1-8 candles)"),
-          marks: z
-            .array(
-              z.object({
-                type: z.enum(["support", "resistance", "neckline", "trendline"]),
-                level: z.number().min(0).max(10),
-                label: z.string().optional(),
-              })
-            )
-            .optional()
-            .describe("optional horizontal structure lines (e.g. neckline at the lows of a double bottom)"),
-          annotations: z
-            .array(z.string())
-            .min(1)
-            .max(5)
-            .describe("2-4 short bullets explaining what the pattern means and how to trade it"),
-        }),
-        execute: async (spec) => spec, // pass through to the client
       },
     },
     stopWhen: stepCountIs(4),

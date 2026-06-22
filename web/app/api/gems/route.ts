@@ -82,8 +82,30 @@ export async function GET(req: Request) {
 
   const { data, count, error } = await sel;
   if (error) return Response.json({ error: error.message }, { status: 500 });
+
+  // Look up which of these gems the current user has favorited so the UI
+  // can render the heart in the correct state without a second round-trip.
+  const gems = (data as GemRow[] | null) ?? [];
+  let favoritedIds: string[] = [];
+  if (gems.length > 0) {
+    const { getCurrentAppUser } = await import("@/lib/supabase-server");
+    const appUser = await getCurrentAppUser();
+    if (appUser) {
+      const { data: favs } = await supabase
+        .from("gem_favorites")
+        .select("gem_id")
+        .eq("user_id", appUser.id)
+        .in(
+          "gem_id",
+          gems.map((g) => g.id)
+        );
+      favoritedIds = (favs ?? []).map((r) => r.gem_id as string);
+    }
+  }
+
   return Response.json({
-    gems: (data as GemRow[] | null) ?? [],
+    gems,
+    favorited_ids: favoritedIds,
     total: count ?? 0,
     page,
     page_size: limit,
@@ -137,6 +159,16 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  // Admin-only — students can favorite gems but can't delete them. The UI
+  // already hides the button for non-admins; this is the server enforcement.
+  const { getCurrentAppUser } = await import("@/lib/supabase-server");
+  const appUser = await getCurrentAppUser();
+  if (!appUser) {
+    return Response.json({ error: "not authenticated" }, { status: 401 });
+  }
+  if (appUser.actualRole !== "admin") {
+    return Response.json({ error: "admin only" }, { status: 403 });
+  }
   const url = new URL(req.url);
   const id = url.searchParams.get("id");
   if (!id) return Response.json({ error: "no id" }, { status: 400 });

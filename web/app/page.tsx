@@ -95,7 +95,7 @@ const FAQS = [
   },
   {
     q: "How is this different from a YouTube course or Discord?",
-    a: "Free content tells you what to do. Trade Aligned shows you what to do, on your chart, the moment you ask, citing the exact lesson it came from. No more scrubbing through a 2-hour livestream looking for the one principle you half-remember.",
+    a: "Free content tells you what to do. Ray AI shows you what to do, on your chart, the moment you ask, citing the exact lesson it came from. No more scrubbing through a 2-hour livestream looking for the one principle you half-remember.",
   },
 ];
 
@@ -117,7 +117,7 @@ export default function LandingPage() {
           </div>
           <div className="flex flex-col leading-none">
             <span className="text-base font-bold text-white">
-              TradeAligned<sup className="text-[9px] font-bold text-zinc-400">™</sup>
+              Ray AI<sup className="text-[9px] font-bold text-zinc-400">™</sup>
             </span>
             <span className="mt-0.5 text-[10px] uppercase tracking-[0.18em] text-zinc-500">
               by TGFX
@@ -289,10 +289,10 @@ export default function LandingPage() {
           <div className="grid items-center gap-4 lg:grid-cols-[1fr_auto]">
             <div>
               <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">
-                why Trade Aligned exists
+                why Ray AI exists
               </div>
               <h2 className="mt-1 text-lg font-bold text-white sm:text-xl">
-                The true power behind TradeAligned is our private data.
+                The true power behind Ray AI is our private data.
               </h2>
               <p className="mt-1.5 text-xs leading-relaxed text-zinc-400 sm:text-sm">
                 While most traders failed to collect data on their specific
@@ -533,7 +533,7 @@ export default function LandingPage() {
             <p className="mx-auto max-w-xl text-sm text-zinc-400 sm:text-base">
               Every trader has spent a year stuck on the same mistakes because
               there was no one around to answer the question in the moment.
-              Trade Aligned ends that. Full curriculum free, AI Mentor free
+              Ray AI ends that. Full curriculum free, AI Mentor free
               for 7 days, the entire database working for you the second you
               join.
             </p>
@@ -560,7 +560,7 @@ export default function LandingPage() {
             <div className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-gradient-to-br from-emerald-400 to-teal-500">
               <Sparkles className="h-3 w-3 text-white" strokeWidth={2.5} />
             </div>
-            <span className="font-semibold text-zinc-300">Trade Aligned</span>
+            <span className="font-semibold text-zinc-300">Ray AI</span>
             <span className="text-zinc-600">·</span>
             <span>by TGFX Academy</span>
           </div>

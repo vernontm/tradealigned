@@ -65,7 +65,7 @@ export function MobileNav() {
                 <div className="mt-0.5 flex items-center gap-1.5">
                   <div className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.6)]" />
                   <div className="text-base font-semibold text-white">
-                    Trade Aligned
+                    Ray AI
                   </div>
                 </div>
               </Link>

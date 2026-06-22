@@ -1,10 +1,10 @@
 "use client";
 
-import { Crosshair, Gauge, Lock, PlayCircle, Sparkles } from "lucide-react";
+import { Crosshair, Gauge, PlayCircle, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { CREDIT_COSTS, type CreditAction } from "@/lib/credit-costs";
-import { useHasPaidAccess } from "@/lib/use-current-user";
+import { useCurrentUser } from "@/lib/use-current-user";
 
 type Mode = {
   href: string;
@@ -14,11 +14,11 @@ type Mode = {
   status: "live" | "soon";
   accent: string;
   costAction: CreditAction;
+  adminOnly?: boolean;
 };
 
-// Free accounts see only the first mode unblurred. The rest are visually
-// present (so the value of upgrading is concrete) but locked behind the
-// pricing CTA.
+// All modes open to every authenticated account; Setup Quiz is admin-only
+// for now because the question pool is still being curated.
 const MODES: Mode[] = [
   {
     href: "/drill/quiz",
@@ -28,6 +28,7 @@ const MODES: Mode[] = [
     status: "live",
     accent: "from-emerald-500 to-teal-600",
     costAction: "drill_question",
+    adminOnly: true,
   },
   {
     href: "/drill/replay",
@@ -59,10 +60,9 @@ const MODES: Mode[] = [
 ];
 
 export default function Page() {
-  const hasPaidAccess = useHasPaidAccess();
-  // Treat hydration-unknown as locked so a free account never flashes the
-  // full grid before the gate snaps in.
-  const isLocked = hasPaidAccess !== true;
+  const { actualRole } = useCurrentUser();
+  const isAdmin = actualRole === "admin";
+  const visibleModes = MODES.filter((m) => !m.adminOnly || isAdmin);
 
   return (
     <AppShell title="Daily Drill" subtitle="train your eye, sharpen your reads">
@@ -84,69 +84,45 @@ export default function Page() {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {MODES.map((m, i) => {
+            {visibleModes.map((m) => {
               const Icon = m.icon;
               const isLive = m.status === "live";
-              const locked = isLocked && i > 0;
               const cost = CREDIT_COSTS[m.costAction];
 
               const inner = (
                 <div
                   className={`group relative h-full overflow-hidden rounded-2xl bg-white p-5 ring-1 ring-zinc-200 transition ${
-                    isLive && !locked
+                    isLive
                       ? "cursor-pointer shadow-sm hover:-translate-y-0.5 hover:shadow-md"
-                      : "cursor-not-allowed"
+                      : "cursor-not-allowed opacity-60"
                   }`}
                 >
                   <div
-                    style={locked ? { filter: "blur(6px) saturate(0.85)" } : undefined}
-                    className={locked ? "pointer-events-none select-none" : undefined}
+                    className={`mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${m.accent} text-white shadow`}
                   >
-                    <div
-                      className={`mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${m.accent} text-white shadow`}
-                    >
-                      <Icon className="h-5 w-5" strokeWidth={2} />
-                    </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="text-base font-semibold text-zinc-900">
-                        {m.label}
-                      </div>
-                      {!isLive && (
-                        <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-zinc-500">
-                          soon
-                        </span>
-                      )}
-                      {isLive && !locked && (
-                        <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-emerald-700 ring-1 ring-emerald-200">
-                          {cost} credits
-                        </span>
-                      )}
-                    </div>
-                    <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-                      {m.desc}
-                    </p>
+                    <Icon className="h-5 w-5" strokeWidth={2} />
                   </div>
-
-                  {locked && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 rounded-2xl bg-white/40 backdrop-blur-[2px]">
-                      <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/15 ring-1 ring-emerald-400/40">
-                        <Lock className="h-4 w-4 text-emerald-600" strokeWidth={2.5} />
-                      </div>
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
-                        free trial unlocks
-                      </span>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-base font-semibold text-zinc-900">
+                      {m.label}
                     </div>
-                  )}
+                    {m.adminOnly && (
+                      <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-amber-700 ring-1 ring-amber-200">
+                        admin
+                      </span>
+                    )}
+                    {isLive && !m.adminOnly && (
+                      <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-emerald-700 ring-1 ring-emerald-200">
+                        {cost} credits
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+                    {m.desc}
+                  </p>
                 </div>
               );
 
-              if (locked) {
-                return (
-                  <Link key={m.href} href="/pricing">
-                    {inner}
-                  </Link>
-                );
-              }
               return isLive ? (
                 <Link key={m.href} href={m.href}>
                   {inner}
@@ -157,18 +133,10 @@ export default function Page() {
             })}
           </div>
 
-          {isLocked && (
-            <div className="mt-6 rounded-2xl border border-emerald-400/30 bg-gradient-to-br from-emerald-500/10 via-zinc-50 to-zinc-100 p-5 text-center">
-              <p className="text-sm text-zinc-700">
-                Setup Quiz is open for free accounts.{" "}
-                <Link
-                  href="/pricing"
-                  className="font-semibold text-emerald-700 underline-offset-2 hover:underline"
-                >
-                  Start your 7-day free trial
-                </Link>{" "}
-                to unlock Replay / Predict, Sniper Mode, and Speed Read.
-              </p>
+          {!isAdmin && (
+            <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5 text-center text-xs text-zinc-500">
+              All drill modes are open. Setup Quiz is being curated and will
+              roll out once the question pool is fully reviewed.
             </div>
           )}
         </div>

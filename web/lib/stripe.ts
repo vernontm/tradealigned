@@ -11,7 +11,7 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   // upgrades.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   apiVersion: "2025-09-30.clover" as any,
-  appInfo: { name: "Trade Aligned by TGFX Academy", version: "0.1.0" },
+  appInfo: { name: "Ray AI by TGFX Academy", version: "0.1.0" },
 });
 
 export type RayAiPlanId =
@@ -49,7 +49,7 @@ export const PLANS: Record<RayAiPlanId, PlanConfig> = {
   // See /api/stripe/checkout.
   trial: {
     id: "trial",
-    product_name: "Trade Aligned · 7-Day Free Trial",
+    product_name: "Ray AI · 7-Day Free Trial",
     product_description:
       "7 days of full access free. Auto-renews at $29.99/mo unless cancelled.",
     unit_amount_cents: 2999,

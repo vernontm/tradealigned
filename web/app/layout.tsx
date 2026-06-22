@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Trade Aligned by TGFX Academy",
+  title: "Ray AI by TGFX Academy",
   description: "Your trading mentor, grounded in real trades.",
 };
 
