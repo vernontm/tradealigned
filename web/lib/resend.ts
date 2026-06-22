@@ -13,7 +13,7 @@ import { Resend } from "resend";
 
 const apiKey = process.env.RESEND_API_KEY;
 const FROM =
-  process.env.RESEND_FROM_EMAIL || "Ray AI <noreply@tradealigned.com>";
+  process.env.RESEND_FROM_EMAIL || "Ray AI <noreply@tgfx-academy.com>";
 
 let _resend: Resend | null = null;
 function getResend() {
@@ -113,9 +113,9 @@ export function brandedEmail({
             </tr>
             <tr>
               <td style="padding:20px 28px;border-top:1px solid rgba(255,255,255,0.06);font-size:11px;color:#52525b;line-height:1.5;">
-                You're receiving this because you have an account at <a href="https://tradealigned.com" style="color:#a1a1aa;text-decoration:none;">tradealigned.com</a>.
+                You're receiving this because you have an account at <a href="https://tgfx-academy.com" style="color:#a1a1aa;text-decoration:none;">tgfx-academy.com</a>.
                 <br />
-                Ray AI™ by TGFX Academy · <a href="https://tradealigned.com/billing" style="color:#a1a1aa;text-decoration:none;">manage subscription</a>
+                Ray AI™ by TGFX Academy · <a href="https://tgfx-academy.com/billing" style="color:#a1a1aa;text-decoration:none;">manage subscription</a>
               </td>
             </tr>
           </table>

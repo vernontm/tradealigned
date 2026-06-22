@@ -37,7 +37,7 @@ async function sendWelcomeEmail(email: string, planId: RayAiPlanId) {
         : "Your subscription is active.",
       heading,
       body,
-      ctaUrl: "https://tradealigned.com/chat",
+      ctaUrl: "https://tgfx-academy.com/chat",
       ctaLabel: "Open the AI Mentor",
     }),
   });
