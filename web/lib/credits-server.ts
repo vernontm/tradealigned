@@ -15,7 +15,10 @@ import {
  * the race is bounded by the balance check we re-run after insert.
  */
 
-export type LedgerKind = "grant" | "debit" | "topup" | "refund";
+// Mirrors the CHECK constraint on credit_ledger.kind. "spend" covers debits
+// from user actions; "grant" is recurring/welcome credits; "refund",
+// "expire", and "adjustment" are reserved for future flows.
+export type LedgerKind = "grant" | "spend" | "refund" | "expire" | "adjustment";
 
 /**
  * Sum the user's ledger. If they have zero rows at all, this is their first
@@ -78,7 +81,7 @@ export async function chargeCredits(
   }
   const { error } = await supabase.from("credit_ledger").insert({
     user_id: appUserId,
-    kind: "debit" as LedgerKind,
+    kind: "spend" as LedgerKind,
     amount: -cost,
     reason: `action:${action}`,
     metadata: metadata ?? null,
