@@ -6,6 +6,7 @@ import {
   Gem,
   Image as ImageIcon,
   Loader2,
+  Lock,
   Play,
   Plus,
   Search,
@@ -13,6 +14,12 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import Link from "next/link";
+import { useHasPaidAccess } from "@/lib/use-current-user";
+
+// Free accounts can preview a small handful of gems unblurred. Items beyond
+// this index render with a blur overlay + upgrade CTA.
+const FREE_PREVIEW_LIMIT = 10;
 import { useCallback, useEffect, useState } from "react";
 import { toMediaUrl } from "@/lib/media";
 
@@ -39,6 +46,13 @@ type ListResponse = {
 };
 
 export function GemsView() {
+  // Paid users see every gem unblurred; free users see the first
+  // FREE_PREVIEW_LIMIT, with the rest blurred + locked behind an upgrade CTA.
+  // hasPaidAccess is `undefined` during auth hydration — treat that as
+  // "free" so we never accidentally flash the full library to a free user.
+  const hasPaidAccess = useHasPaidAccess();
+  const isLocked = hasPaidAccess !== true;
+
   const [data, setData] = useState<ListResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -141,11 +155,46 @@ export function GemsView() {
         {data && data.gems.length > 0 && (
           <>
             <div className="grid gap-3 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
-              {data.gems.map((g) => (
-                <GemCard key={g.id} gem={g} onDelete={() => handleDelete(g.id)} />
-              ))}
+              {data.gems.map((g, i) => {
+                const locked = isLocked && i >= FREE_PREVIEW_LIMIT;
+                return (
+                  <div key={g.id} className="relative">
+                    <div
+                      className={
+                        locked
+                          ? "pointer-events-none select-none"
+                          : undefined
+                      }
+                      style={
+                        locked
+                          ? { filter: "blur(8px) saturate(0.85)" }
+                          : undefined
+                      }
+                      aria-hidden={locked}
+                    >
+                      <GemCard
+                        gem={g}
+                        onDelete={() => handleDelete(g.id)}
+                      />
+                    </div>
+                    {locked && (
+                      <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-zinc-950/50">
+                        <Lock
+                          className="h-5 w-5 text-emerald-300"
+                          strokeWidth={2}
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-            {data.gems.length < data.total && (
+
+            {isLocked && data.gems.length > FREE_PREVIEW_LIMIT && (
+              <UpgradeCta count={data.total - FREE_PREVIEW_LIMIT} />
+            )}
+
+            {!isLocked && data.gems.length < data.total && (
               <div className="mt-6 flex flex-col items-center gap-2">
                 <button
                   type="button"
@@ -511,6 +560,42 @@ function CreateGemForm({
         >
           {busy ? "saving…" : "save gem"}
         </button>
+      </div>
+    </div>
+  );
+}
+
+function UpgradeCta({ count }: { count: number }) {
+  return (
+    <div className="relative mt-8 overflow-hidden rounded-3xl border border-emerald-400/30 bg-gradient-to-br from-emerald-500/10 via-zinc-900 to-zinc-950 p-7 text-center shadow-xl">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-emerald-400/25 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-20 -left-10 h-48 w-48 rounded-full bg-teal-500/15 blur-3xl"
+      />
+      <div className="relative space-y-3">
+        <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300 ring-1 ring-emerald-400/30">
+          <Lock className="h-3 w-3" strokeWidth={2.5} />
+          {count}+ more gems locked
+        </div>
+        <h3 className="text-xl font-bold text-white">
+          Unlock the full Gem library.
+        </h3>
+        <p className="mx-auto max-w-md text-sm leading-relaxed text-zinc-400">
+          Every clipped teaching moment from 1,000+ hours of live trading,
+          searchable, timestamped, ready when you need it. 7 days free.
+        </p>
+        <div className="pt-1">
+          <Link
+            href="/pricing"
+            className="inline-flex items-center gap-1.5 rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-600 to-cyan-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/40 transition hover:shadow-xl hover:shadow-emerald-500/50"
+          >
+            Start Free Trial
+          </Link>
+        </div>
       </div>
     </div>
   );
