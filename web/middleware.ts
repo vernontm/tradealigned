@@ -7,11 +7,12 @@ const PUBLIC_PATHS = [
   "/sign-up",
   "/auth/callback",
   "/pricing",
-  // Stripe routes self-authenticate (checkout uses email-only, webhook verifies
-  // the Stripe signature). Without this they get redirected to /sign-in for
-  // unauthenticated callers — which breaks the post-signup trial fetch since
-  // cookies haven't propagated by the time we POST to checkout.
-  "/api/stripe",
+  // API routes do their own auth via getCurrentAppUser() and return 401 when
+  // unauthenticated. Letting middleware redirect them to /sign-in breaks
+  // fetches from the client (the redirect HTML comes back instead of JSON)
+  // and is the root cause of "chat / drill not working" — anonymous-LIKE
+  // requests at the edge get bounced before our handlers even see them.
+  "/api",
 ];
 
 const ADMIN_PATHS = ["/admin"];
