@@ -3,16 +3,20 @@
 import { CreditCard, ExternalLink, Loader2, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { useCurrentUser } from "@/lib/use-current-user";
 
 export function BillingView() {
-  const [email, setEmail] = useState("");
+  // Email comes from the signed-in user. The whole /billing route sits
+  // behind middleware auth, so it's available by the time the portal
+  // button is clicked.
+  const { email, loaded } = useCurrentUser();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const openPortal = async () => {
     setError(null);
-    if (!email.trim() || !email.includes("@")) {
-      setError("enter the email you used at checkout.");
+    if (!email) {
+      setError("please sign in first.");
       return;
     }
     setBusy(true);
@@ -20,7 +24,7 @@ export function BillingView() {
       const r = await fetch("/api/stripe/portal", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email: email.trim() }),
+        body: JSON.stringify({ email }),
       });
       const j = await r.json();
       if (!r.ok || !j.url) {
@@ -79,16 +83,12 @@ export function BillingView() {
                   </div>
                 </div>
 
-                <label className="block text-xs font-semibold text-zinc-300">
-                  your email
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="the one you used at checkout"
-                    className="mt-1 w-full rounded-xl border border-white/10 bg-zinc-950/60 px-3 py-2 text-sm text-zinc-100 outline-none placeholder-zinc-600 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20"
-                  />
-                </label>
+                {loaded && email && (
+                  <div className="rounded-xl border border-white/10 bg-zinc-950/60 px-3 py-2 text-xs text-zinc-400">
+                    Signed in as{" "}
+                    <span className="font-semibold text-zinc-100">{email}</span>
+                  </div>
+                )}
 
                 {error && (
                   <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-300">

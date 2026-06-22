@@ -1,7 +1,9 @@
 "use client";
 
 import { Check, Coins, Loader2, Sparkles, Zap } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
+import { useCurrentUser } from "@/lib/use-current-user";
 
 const RAY_AI_FEATURES = [
   "3,000 credits every month",
@@ -34,14 +36,17 @@ const TOPUPS = [
 ] as const;
 
 export function PricingView() {
-  const [email, setEmail] = useState("");
+  // Email is read from the signed-in user — the visit to this page goes
+  // through middleware that requires auth, so by the time this renders
+  // we either have an email or auth is still hydrating.
+  const { email, loaded } = useCurrentUser();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const checkout = async (plan: string) => {
     setError(null);
-    if (!email.trim() || !email.includes("@")) {
-      setError("enter your email so we can tie this purchase to your account.");
+    if (!email) {
+      setError("please sign in first.");
       return;
     }
     setBusy(plan);
@@ -49,7 +54,7 @@ export function PricingView() {
       const r = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ plan, email: email.trim() }),
+        body: JSON.stringify({ plan, email }),
       });
       const j = await r.json();
       if (!r.ok || !j.url) {
@@ -90,23 +95,22 @@ export function PricingView() {
             </p>
           </div>
 
-          {/* Email gate */}
-          <div className="mx-auto max-w-md space-y-1.5">
-            <div className="rounded-2xl bg-white/5 p-4 shadow-sm ring-1 ring-white/10 backdrop-blur">
-              <label className="block text-xs font-semibold text-zinc-300">
-                your email
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-zinc-950/60 px-3 py-2 text-sm text-zinc-100 outline-none placeholder-zinc-600 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20"
-                />
-              </label>
-            </div>
-            <p className="px-2 text-center text-[10px] text-zinc-500">
-              auto-filled from your account once you&apos;re logged in.
-            </p>
+          {/* Signed-in identity badge + error slot */}
+          <div className="mx-auto max-w-md space-y-2">
+            {loaded && email ? (
+              <div className="flex items-center justify-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1.5 text-[11px] text-emerald-200">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                Checking out as <span className="font-semibold">{email}</span>
+              </div>
+            ) : loaded && !email ? (
+              <div className="rounded-xl border border-rose-500/30 bg-rose-500/15 px-3 py-2 text-center text-xs text-rose-300">
+                You&apos;re not signed in.{" "}
+                <Link href="/sign-in?next=/pricing" className="underline">
+                  Sign in
+                </Link>{" "}
+                to continue.
+              </div>
+            ) : null}
             {error && (
               <div className="rounded-xl border border-rose-500/30 bg-rose-500/15 px-3 py-2 text-center text-xs text-rose-300">
                 {error}
