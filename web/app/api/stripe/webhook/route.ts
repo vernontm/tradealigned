@@ -8,10 +8,40 @@
  * The webhook secret printed by that command goes in STRIPE_WEBHOOK_SECRET.
  */
 import type Stripe from "stripe";
+import { brandedEmail, sendEmail } from "@/lib/resend";
 import { PLANS, stripe, type RayAiPlanId } from "@/lib/stripe";
 import { supabase } from "@/lib/supabase";
 
 export const config = { api: { bodyParser: false } };
+
+async function sendWelcomeEmail(email: string, planId: RayAiPlanId) {
+  const isTrial = planId === "trial";
+  const heading = isTrial
+    ? "You're in. 7 days of full access, on us."
+    : "Welcome to Trade Aligned.";
+  const body = isTrial
+    ? `<p>Your $1 trial is live. For the next 7 days you have the full platform unlocked: AI Mentor, Drill Arcade, every gem, live trade calls, and weekly progress reports.</p>
+<p>On day 8 your card auto-renews at $29.99/mo. Cancel any time before then with one click from your billing page and you're never charged again.</p>
+<p>Start with the AI Mentor — drop a chart, ask anything, and watch it cite the exact lesson it learned from.</p>`
+    : `<p>Your subscription is active. Every feature on the platform is now unlocked, AI Mentor, Drill Arcade, gems, live trade calls, weekly progress reports.</p>
+<p>Jump back in whenever you're ready.</p>`;
+
+  await sendEmail({
+    to: email,
+    subject: isTrial
+      ? "Your Trade Aligned trial is live"
+      : "Welcome to Trade Aligned",
+    html: brandedEmail({
+      preheader: isTrial
+        ? "7 days of full access. Cancel anytime."
+        : "Your subscription is active.",
+      heading,
+      body,
+      ctaUrl: "https://tradealigned.com/chat",
+      ctaLabel: "Open the AI Mentor",
+    }),
+  });
+}
 
 async function grantSubscription(
   appUserId: string,
@@ -125,6 +155,18 @@ export async function POST(req: Request) {
             ? new Date(item.current_period_end * 1000)
             : null;
           await grantSubscription(appUserId, planId, sub.id, periodEnd);
+
+          // Welcome email. Wrapped so a Resend hiccup never makes us 5xx the
+          // webhook (Stripe would retry and grantSubscription would re-run).
+          try {
+            const email =
+              session.customer_details?.email || session.customer_email;
+            if (email) {
+              await sendWelcomeEmail(email, planId);
+            }
+          } catch (e) {
+            console.error("[webhook] welcome email failed", e);
+          }
         } else if (session.mode === "payment") {
           const pi =
             typeof session.payment_intent === "string"

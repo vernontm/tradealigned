@@ -172,13 +172,19 @@ export function ReplayMockup() {
   const entryCandle = candles[HISTORY_COUNT - 1];
   const entryPrice = entryCandle?.c ?? 100;
 
-  // SL distance, half a bar's average range
+  // SL distance, half a bar's average range. TP sits at 2R for a realistic
+  // risk-to-reward target — the future candles can overshoot and the badge
+  // still ties back to a marked level.
   const slDelta = yRange * 0.05;
+  const tpDelta = slDelta * 2;
   const slPrice =
     round.direction === "long" ? entryPrice - slDelta : entryPrice + slDelta;
+  const tpPrice =
+    round.direction === "long" ? entryPrice + tpDelta : entryPrice - tpDelta;
 
   const finalPrice = candles[total - 1]?.c ?? entryPrice;
   const showSL = phase === "entered" || phase === "play" || phase === "result";
+  const showTP = showSL;
   const showCursor = phase === "decide";
   const showEntry = phase !== "history" && phase !== "reset";
   const showResult = phase === "result" || phase === "tally";
@@ -307,6 +313,19 @@ export function ReplayMockup() {
             />
           )}
 
+          {/* TP line */}
+          {showTP && (
+            <line
+              x1={xOf(HISTORY_COUNT - 0.5)}
+              x2={W - PAD_X}
+              y1={yOf(tpPrice)}
+              y2={yOf(tpPrice)}
+              stroke="#34d399"
+              strokeWidth={1.4}
+              strokeDasharray="6 3"
+            />
+          )}
+
           {/* Entry label */}
           {showEntry && (
             <g>
@@ -354,6 +373,31 @@ export function ReplayMockup() {
                 fontFamily="monospace"
               >
                 SL
+              </text>
+            </g>
+          )}
+
+          {/* TP label */}
+          {showTP && (
+            <g>
+              <rect
+                x={xOf(HISTORY_COUNT - 0.5) + 4}
+                y={yOf(tpPrice) - 7}
+                rx={3}
+                width={28}
+                height={14}
+                fill="#047857"
+              />
+              <text
+                x={xOf(HISTORY_COUNT - 0.5) + 18}
+                y={yOf(tpPrice) + 3}
+                textAnchor="middle"
+                fontSize={9}
+                fill="#fff"
+                fontWeight={700}
+                fontFamily="monospace"
+              >
+                TP
               </text>
             </g>
           )}

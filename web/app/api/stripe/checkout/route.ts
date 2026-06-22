@@ -70,6 +70,19 @@ export async function POST(req: Request) {
 
   const planCfg = PLANS[plan];
   const origin = new URL(req.url).origin;
+
+  // Trial plan is special: $1 today via add_invoice_items, 7-day Stripe
+  // trial, then auto-renews at the $29.99/mo price already on the line item.
+  // STRIPE_PRICE_TRIAL_SETUP must point at a $1 one-time price in Stripe.
+  const isTrial = plan === "trial";
+  const trialSetupPrice = process.env.STRIPE_PRICE_TRIAL_SETUP;
+  if (isTrial && !trialSetupPrice) {
+    return Response.json(
+      { error: "STRIPE_PRICE_TRIAL_SETUP env var missing (one-time $1 price)." },
+      { status: 500 }
+    );
+  }
+
   const session = await stripe.checkout.sessions.create({
     mode: planCfg.recurring ? "subscription" : "payment",
     customer: customerId,
@@ -77,6 +90,7 @@ export async function POST(req: Request) {
     success_url: `${origin}/account?checkout=success&plan=${plan}`,
     cancel_url: `${origin}/pricing?checkout=cancelled`,
     allow_promotion_codes: true,
+    ...(isTrial ? { payment_method_collection: "always" as const } : {}),
     metadata: {
       ray_ai_plan_id: plan,
       app_user_id: user.id,
@@ -85,6 +99,12 @@ export async function POST(req: Request) {
       ? {
           subscription_data: {
             metadata: { ray_ai_plan_id: plan, app_user_id: user.id },
+            ...(isTrial
+              ? {
+                  trial_period_days: 7,
+                  add_invoice_items: [{ price: trialSetupPrice! }],
+                }
+              : {}),
           },
         }
       : {

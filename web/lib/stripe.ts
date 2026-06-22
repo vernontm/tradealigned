@@ -12,6 +12,7 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 export type RayAiPlanId =
+  | "trial"
   | "ray_ai"
   | "live_trade_lab"
   | "lifetime"
@@ -39,6 +40,20 @@ export type PlanConfig = {
 };
 
 export const PLANS: Record<RayAiPlanId, PlanConfig> = {
+  // $1 7-day trial → auto-renews into ray_ai monthly. Implemented as a
+  // subscription to the standard $29.99/mo price with trial_period_days: 7
+  // plus a $1 setup invoice item billed today. See /api/stripe/checkout.
+  trial: {
+    id: "trial",
+    product_name: "Trade Aligned · $1 Trial",
+    product_description:
+      "$1 today for 7 days of full access. Auto-renews at $29.99/mo unless cancelled.",
+    unit_amount_cents: 2999,
+    recurring: "month",
+    credits_per_period: 3000,
+    price_env: "STRIPE_PRICE_RAY_AI",
+    tier: "paid_standard",
+  },
   ray_ai: {
     id: "ray_ai",
     product_name: "Ray AI",

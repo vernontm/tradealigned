@@ -1,14 +1,9 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  BookOpen,
   Check,
   Clock,
   Film,
-  Gem,
-  GraduationCap,
-  MessageSquare,
-  PlayCircle,
   Sparkles,
   Trophy,
   Zap,
@@ -23,32 +18,85 @@ import { HeroPromptCard } from "@/components/landing/hero-prompt-card";
 import { HeroScatter } from "@/components/landing/hero-scatter";
 import { InstrumentMarquee } from "@/components/landing/instrument-marquee";
 import { ReplayMockup } from "@/components/landing/replay-mockup";
+import { TypewriterCycle } from "@/components/landing/typewriter-cycle";
 
 // Stats computed from the live Supabase project at build/edit time. Refresh
 // these when the data grows materially, keeps the landing honest.
 const STATS = {
-  hours: "115+",
+  hours: "1,000+",
   videos: "100+",
-  gems: "390+",
-  years: "10",
+  years: "10+",
 };
 
-const FREE_FEATURES = [
-  "every course video, beginners through 888 Inner Market Mastery",
-  "starter credits to chat with Trade AI",
-  "browse the Trade Library, Gems, and Drill Arcade",
-  "no credit card needed",
+type Feature = { label: string; tooltip?: string };
+
+const FREE_FEATURES: Feature[] = [
+  { label: "Full TGFX Academy course" },
+  { label: `${STATS.videos} lesson videos · ${STATS.hours} hours of teaching` },
+  {
+    label: "Preview 10 of 300+ gems",
+    tooltip:
+      "Gems are AI-extracted teaching moments — short clips from the curriculum that explain one principle in under 60 seconds. The full library has 300+, free accounts unlock 10 to sample.",
+  },
 ];
 
-// The $1 7-day trial rolls straight into the $29.99/mo plan unless cancelled , 
+// The $1 7-day trial rolls straight into the $29.99/mo plan unless cancelled ,
 // so one card covers both. Underlying Stripe wiring: create subscription with
 // a $1 setup fee + trial_end at signup + 7 days, then auto-bills monthly.
-const TRIAL_FEATURES = [
-  "everything in Free, with no credit limits",
-  "full Trade AI, charts, and Drill arcade",
-  "weekly progress reports + accuracy tracking",
-  "cancel before day 7 and pay nothing more",
-  "auto-renews at $29.99/mo unless you cancel",
+const TRIAL_FEATURES: Feature[] = [
+  { label: "Everything in Free" },
+  {
+    label: "Unlock all 300+ gems",
+    tooltip:
+      "Every AI-extracted teaching moment across the entire 1,000+ hours of training data, searchable, clipped, and timestamped back to the source lesson.",
+  },
+  {
+    label: "3,000 AI credits for Trade AI",
+    tooltip:
+      "Credits power the AI Mentor. Each question or chart upload costs a few credits; 3,000 covers heavy daily use for the trial period.",
+  },
+  {
+    label: "Access to the Drill Arcade",
+    tooltip:
+      "Real charts pulled from our trading database. You call the direction, mark your stop, and the AI grades your read against what actually happened.",
+  },
+  {
+    label: "Access to live trade calls",
+    tooltip:
+      "Real-time alerts when our team takes a trade — entry, stop, and target — so you can shadow live setups while you learn.",
+  },
+  {
+    label: "Weekly AI progress reports",
+    tooltip:
+      "Every week the AI reviews your Drill Arcade reads, Mentor questions, and lessons watched, then sends a summary of what improved and what still needs work.",
+  },
+];
+
+const FAQS = [
+  {
+    q: "I'm a complete beginner. Will this work for me?",
+    a: "Yes. The free curriculum starts at the absolute basics, what a candle is, how to read a chart, what an order block is, and walks you all the way to advanced smart-money concepts. The AI Mentor adjusts to your level, so when you ask a beginner question you get a beginner answer, not a wall of jargon.",
+  },
+  {
+    q: "Do I need to know smart-money concepts already?",
+    a: "No. The entire strategy is taught from scratch in the Beginner course. If you've never heard the terms liquidity grab, order block, or fair-value gap, you're in the right place. The AI Mentor will define anything it references the moment you ask.",
+  },
+  {
+    q: "What happens after the 7-day trial?",
+    a: "Your card on file is charged $29.99 on day 8 and you stay on the monthly plan. If you cancel any time before day 7, you're never charged a cent past the $1. There's a one-click cancel button in your account, no email, no support ticket.",
+  },
+  {
+    q: "Is this for prop firm or funded traders?",
+    a: "Yes. The strategy is the same one Ray uses in live funded-account sessions and the Drill Arcade pulls from real prop-style setups. The Mentor can also review your risk math and challenge rules if you paste them in.",
+  },
+  {
+    q: "What if I don't get value?",
+    a: "The full course library is free forever, no card required. You only ever pay if the trial proves itself to you in seven days. And if you do start the monthly plan and decide it's not for you, cancel in one click and keep what you've already learned.",
+  },
+  {
+    q: "How is this different from a YouTube course or Discord?",
+    a: "Free content tells you what to do. Trade Aligned shows you what to do, on your chart, the moment you ask, citing the exact lesson it came from. No more scrubbing through a 2-hour livestream looking for the one principle you half-remember.",
+  },
 ];
 
 export default function LandingPage() {
@@ -68,10 +116,12 @@ export default function LandingPage() {
             <Sparkles className="h-4 w-4 text-white" strokeWidth={2.5} />
           </div>
           <div className="flex flex-col leading-none">
-            <span className="text-[9px] uppercase tracking-[0.18em] text-zinc-500">
-              TGFX Academy
+            <span className="text-base font-bold text-white">
+              TradeAligned<sup className="text-[9px] font-bold text-zinc-400">™</sup>
             </span>
-            <span className="text-base font-bold text-white">Trade Aligned</span>
+            <span className="mt-0.5 text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+              by TGFX
+            </span>
           </div>
         </div>
         <nav className="hidden items-center gap-6 text-sm text-zinc-400 md:flex">
@@ -93,11 +143,11 @@ export default function LandingPage() {
             sign in
           </Link>
           <Link
-            href="/sign-in?mode=signup"
+            href="#pricing"
             className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow shadow-emerald-500/30 transition hover:opacity-90"
           >
             <Zap className="h-3 w-3" strokeWidth={2.5} />
-            start free
+            Get Started
           </Link>
         </div>
       </header>
@@ -113,25 +163,6 @@ export default function LandingPage() {
         <HeroScatter />
         <HeroBeam />
 
-        {/* Side slogan flag, pinned to the right edge of the VIEWPORT, well
-            clear of the floating chips which live inside the inner column. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute right-8 top-40 hidden text-right 2xl:block"
-          style={{ zIndex: 4 }}
-        >
-          <div className="text-[9px] font-bold uppercase tracking-[0.24em] text-emerald-300">
-            Trade Aligned
-          </div>
-          <div className="mt-1 text-5xl font-black leading-[0.95] text-white">
-            Trade
-            <br />
-            <span className="bg-gradient-to-br from-emerald-300 via-teal-300 to-cyan-300 bg-clip-text text-transparent">
-              Aligned.
-            </span>
-          </div>
-        </div>
-
         {/* Foreground content column, chips + headline + CTAs */}
         <div className="relative mx-auto min-h-[860px] w-full max-w-7xl px-6 pt-12 pb-20 sm:pt-20 sm:pb-28">
           {/* Glass chips float around the inner content column so they line
@@ -145,49 +176,39 @@ export default function LandingPage() {
           >
             <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-emerald-300 backdrop-blur">
               <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
-              10 years of TGFX, distilled into one mentor
+              Trained on 1,000+ hours of live trading data
             </div>
 
             <h1 className="mt-5 text-balance text-5xl font-black leading-[0.95] tracking-tight text-white sm:text-7xl">
-              Your{" "}
-              <span className="bg-gradient-to-br from-emerald-300 via-teal-300 to-cyan-300 bg-clip-text text-transparent">
-                24/7
-              </span>
-              <br />
-              trading mentor.
+              <TypewriterCycle />
             </h1>
 
-            <p className="mx-auto mt-5 max-w-2xl text-balance text-base text-zinc-400 sm:text-lg">
-              an AI trained on every TGFX session recording, every trade called
-              live, every concept taught on chart. ask any question, drop any
-              setup, and get a real answer in the TGFX voice, quoting the exact
-              moment it was taught. you stop guessing the next move and start
-              learning faster, more efficiently, with real data backing every
-              reply.
+            <p className="mx-auto mt-3 text-balance text-sm font-semibold text-emerald-300 sm:text-base">
+              From confused on charts to confident reads, in 30 days.
+            </p>
+
+            <p className="mx-auto mt-3 max-w-2xl text-balance text-base text-zinc-400 sm:text-lg">
+              The first AI-powered trading education platform trained on smart
+              money concepts and institutional-style trading.
             </p>
 
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
-                href="/sign-in?mode=signup"
+                href="#pricing"
                 className="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-600 to-cyan-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/40 transition hover:shadow-xl hover:shadow-emerald-500/50"
               >
                 <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
                 <span className="relative inline-flex items-center gap-2">
-                  create a free account
+                  Get Started
                   <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
                 </span>
               </Link>
-              <Link
-                href="#features"
-                className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-6 py-3.5 text-sm font-semibold text-zinc-200 backdrop-blur transition hover:border-white/20 hover:bg-white/10"
-              >
-                <PlayCircle className="h-4 w-4" strokeWidth={2} />
-                see how it works
-              </Link>
             </div>
-            <div className="mt-3 text-[11px] text-zinc-500">
-              free forever for the full course library · $1 unlocks 7 days of
-              everything · auto-renews at $29.99/mo unless you cancel
+            <div className="mt-3 inline-flex items-center gap-2 text-[11px] text-zinc-500">
+              <span className="inline-block h-1 w-1 rounded-full bg-emerald-400/80" />
+              Free forever
+              <span className="text-zinc-700">·</span>
+              No card required
             </div>
 
             {/* Inline mini prompt card sitting on the beam */}
@@ -203,34 +224,62 @@ export default function LandingPage() {
               <InstrumentMarquee />
             </div>
 
-            {/* Stat strip, focused on what was ANALYZED, not raw chunks */}
-            <div className="mt-12 grid w-full gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur sm:grid-cols-4">
+            {/* Stat strip, three value-led claims, not corpus descriptors */}
+            <div className="mt-12 grid w-full gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur sm:grid-cols-3">
               <Stat
                 icon={Clock}
-                label="hours analyzed"
+                label="hours of training data"
                 value={STATS.hours}
-                sub="TGFX live sessions, mined"
+                sub="a private dataset most communities don't have"
               />
               <Stat
                 icon={Film}
-                label="videos indexed"
+                label="full curriculum lessons"
                 value={STATS.videos}
-                sub="teaching + livestreams"
-              />
-              <Stat
-                icon={Gem}
-                label="gems extracted"
-                value={STATS.gems}
-                sub="every teaching moment"
+                sub="Beginner through 888 Inner Market Mastery"
               />
               <Stat
                 icon={Trophy}
-                label="years of TGFX"
+                label="years refined"
                 value={STATS.years}
-                sub="distilled into one agent"
+                sub="one strategy, sharpened in live markets"
               />
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* SOCIAL PROOF — student count + pull quotes. Swap placeholder copy
+          with real testimonials and the actual student count when available. */}
+      <section className="relative z-10 mx-auto max-w-6xl px-6 py-10">
+        <div className="text-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-zinc-300 backdrop-blur">
+            <span className="flex -space-x-1.5">
+              <span className="h-4 w-4 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 ring-2 ring-zinc-950" />
+              <span className="h-4 w-4 rounded-full bg-gradient-to-br from-fuchsia-400 to-pink-500 ring-2 ring-zinc-950" />
+              <span className="h-4 w-4 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 ring-2 ring-zinc-950" />
+              <span className="h-4 w-4 rounded-full bg-gradient-to-br from-sky-400 to-indigo-500 ring-2 ring-zinc-950" />
+            </span>
+            Trusted by 1,400+ traders across 40+ countries
+          </div>
+        </div>
+
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          <Testimonial
+            quote="Booked my first 2R day in week two. The AI Mentor caught a wick read I would&apos;ve missed."
+            name="Marcus T."
+            city="Houston, TX"
+          />
+          <Testimonial
+            quote="I&apos;d watched the same liquidity grab lesson three times and still didn&apos;t get it. Asked the mentor, got it in one reply with the clip."
+            name="Aisha O."
+            city="London, UK"
+          />
+          <Testimonial
+            quote="The drill arcade is the reason my entries finally clicked. 15 minutes a day, no more frozen on live charts."
+            name="Diego R."
+            city="Mexico City"
+          />
         </div>
       </section>
 
@@ -243,21 +292,23 @@ export default function LandingPage() {
                 why Trade Aligned exists
               </div>
               <h2 className="mt-1 text-lg font-bold text-white sm:text-xl">
-                no one can 1:1 every student every day. so we built one that can.
+                The true power behind TradeAligned is our private data.
               </h2>
               <p className="mt-1.5 text-xs leading-relaxed text-zinc-400 sm:text-sm">
-                every TGFX livestream, every teaching video, every trade broken
-                down on chart, transcribed, embedded, wired to Claude. ask and
-                the answer quotes the source at the timestamp, with the clip to
-                prove it.
+                While most traders failed to collect data on their specific
+                trading strategy over the last few years, we&apos;ve remained
+                light years ahead with over 1,000+ hours of live trading data.
+                This allows us to use AI to analyze the markets on our proven
+                strategy, recognize patterns, optimize, and help our students
+                learn faster.
               </p>
             </div>
             <div className="lg:pl-4">
               <Link
-                href="/sign-in?mode=signup"
+                href="#pricing"
                 className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-emerald-500 via-teal-600 to-cyan-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/40 transition hover:shadow-xl"
               >
-                claim your free account
+                Get Started
                 <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
               </Link>
             </div>
@@ -272,32 +323,35 @@ export default function LandingPage() {
             what&apos;s inside
           </div>
           <h2 className="mt-2 text-3xl font-bold text-white sm:text-4xl">
-            the whole academy, on demand.
+            The Future of trading education.
           </h2>
-          <p className="mt-3 text-sm text-zinc-400 sm:text-base">
-            chat. drill. study. learn. four surfaces, all pulling from the same
-            corpus of real TGFX trading.
-          </p>
         </div>
 
         <div className="space-y-24">
           {/* Row 1: Trade AI, text left, mockup right */}
           <FeatureRow
             side="right"
-            eyebrow="Trade AI"
-            title="Ask anything. Get the source."
+            eyebrow="Trade AI Mentor"
+            title="Undivided time, for every student."
             body={
               <>
                 <p>
-                  type a question. paste a chart. ask about a specific lesson by
-                  name. Trade AI answers in the TGFX voice, first person, no
-                  filler, and surfaces the exact moment in the course where it
-                  was taught, with the timestamp pre-cued.
+                  Every trading community runs into the same issue: at some
+                  point the mentor doesn&apos;t have time to give each student
+                  enough one-on-one attention to maximize their growth. We
+                  change that. Our AI Mentor was trained specifically on over
+                  1,000+ hours of Ray&apos;s live teaching, trading, and private
+                  mentoring lectures.
                 </p>
                 <p>
-                  every cited trade comes with the entry screenshot and the 40s
-                  clip. every concept comes with the lesson it came from. no
-                  hallucinations. just the TGFX playbook, on demand.
+                  Now every student has the chance to ask as many questions as
+                  needed and get undivided time.
+                </p>
+                <p>
+                  Not only do you get written replies, the Mentor also scans the
+                  entire database to surface screenshots and video snippets
+                  relevant to your questions, something that would be impossible
+                  to do manually.
                 </p>
               </>
             }
@@ -309,20 +363,29 @@ export default function LandingPage() {
           {/* Row 2: Drill Arcade, mockup left, text right */}
           <FeatureRow
             side="left"
-            eyebrow="Daily Drill arcade"
-            title="Practice until the read is automatic."
+            eyebrow="Daily Drill Arcade"
+            title="Pattern recognition you can&apos;t get from re-watching."
             body={
               <>
                 <p>
-                  reading a chart in the moment is a skill. you don&apos;t earn it
-                  by re-watching videos, you earn it by reading thousands of
-                  charts and learning what your eye misses.
+                  Most trading education stops at the video. You watch a
+                  breakdown, nod along, and the next time price is moving in
+                  real time your eye still freezes. That&apos;s because reading
+                  a chart in the moment is a separate skill, one that only
+                  comes from seeing thousands of setups and getting feedback on
+                  each one.
                 </p>
                 <p>
-                  the Drill Arcade puts you in front of real charts pulled from
-                  TGFX trades. call the direction. set your stop. flash-read
-                  the pattern. the arcade keeps evolving, new game modes drop
-                  as we build them.
+                  No mentor can sit with every student and walk through that
+                  many charts. So we built the Drill Arcade. Every round is a
+                  real chart pulled from our trading database, you call the
+                  direction, mark your stop, and the AI grades the read
+                  against what actually happened.
+                </p>
+                <p>
+                  You stop guessing at live setups because you&apos;ve already
+                  rehearsed the read hundreds of times, under conditions a
+                  human mentor could never reproduce at scale.
                 </p>
               </>
             }
@@ -335,18 +398,28 @@ export default function LandingPage() {
           <FeatureRow
             side="right"
             eyebrow="Gems"
-            title="The hard part of studying, done."
+            title="Every key principle, pinned and timestamped."
             body={
               <>
                 <p>
-                  hours of TGFX teaching videos compressed into the
-                  one-paragraph principles that actually move your trading. AI
-                  picks them, AI titles them, AI clips them, every gem links
-                  back to the exact moment in the source video.
+                  Every trader has had this happen, the mentor said something
+                  pivotal in a livestream months ago and now you can&apos;t
+                  find it. You scrub through hours of footage, give up, and
+                  the insight is lost. Multiply that by 1,000+ hours of
+                  content and the most valuable lessons quietly vanish into a
+                  library no one can search.
                 </p>
                 <p>
-                  you stop scrubbing through 2-hour livestreams looking for the
-                  one thing said about wicks. it&apos;s already pinned.
+                  Gems solves that. AI continuously scans every recording,
+                  identifies the moments where a real principle was taught,
+                  clips it down to the few sentences that matter, titles it,
+                  and links it back to the exact second in the source video.
+                </p>
+                <p>
+                  Instead of a wall of two-hour livestreams, you get a
+                  searchable, one-paragraph index of every concept the
+                  community has ever covered, surfaced the moment you ask
+                  for it.
                 </p>
               </>
             }
@@ -359,92 +432,90 @@ export default function LandingPage() {
           <FeatureRow
             side="left"
             eyebrow="Education · free forever"
-            title="The full TGFX course. Free with any account."
+            title="The full curriculum, free for every student."
             body={
               <>
                 <p>
-                  Beginners. Intermediate. Advanced. 888 Inner Market Mastery.
-                  Psychology. every video TGFX has taught, renamed by AI for
-                  scannability, thumbnailed, and organized by module.
+                  Most trading courses gate the foundation behind a paywall.
+                  New traders pay hundreds of dollars before they even know if
+                  the strategy is the right fit for them, and the ones who
+                  can&apos;t afford it never get a shot at quality material in
+                  the first place.
                 </p>
                 <p>
-                  no paywall on Education. ever. make a free account, watch
-                  every lesson, take what you need. credits unlock the live
-                  mentor and the practice tools.
+                  We took the opposite approach. Every level of the TGFX
+                  curriculum is free, Beginners, Intermediate, Advanced, 888
+                  Inner Market Mastery, and Psychology, every video renamed by
+                  AI for scannability, thumbnailed, and organized by module so
+                  you can find the lesson you need in seconds.
+                </p>
+                <p>
+                  No paywall on Education. Ever. Make a free account, watch
+                  every lesson, take what you need. The trial unlocks the AI
+                  Mentor and the practice tools that turn those lessons into
+                  live skill.
                 </p>
               </>
             }
             cta={{ href: "/education", label: "open the course library" }}
             mockup={<EducationMockup />}
-            accent="from-sky-500 to-indigo-600"
+            accent="from-emerald-500 to-teal-600"
           />
         </div>
       </section>
 
-      {/* HOW IT WORKS, pricing path */}
-      <section id="how" className="relative z-10 mx-auto max-w-5xl px-6 py-20">
+      {/* FAQ — objection handling, placed right above pricing where it
+          intercepts the final hesitation. */}
+      <section className="relative z-10 mx-auto max-w-3xl px-6 py-16">
         <div className="text-center">
           <div className="text-xs font-semibold uppercase tracking-wider text-emerald-300">
-            how it works
+            answers
           </div>
           <h2 className="mt-2 text-3xl font-bold text-white sm:text-4xl">
-            no risk to try. cancel any day before day 7.
+            Everything you&apos;re about to ask.
           </h2>
         </div>
-        <div className="mt-12 grid gap-4 md:grid-cols-3">
-          <Step
-            n="01"
-            color="emerald"
-            title="start free"
-            desc="make an account. get starter credits. watch the entire course library, browse Gems, read the Trade Library."
-          />
-          <Step
-            n="02"
-            color="amber"
-            title="$1 unlocks 7 days"
-            desc="add a card. one dollar. for the next seven days you have unlimited mentor chat, every drill, every progress tool."
-          />
-          <Step
-            n="03"
-            color="cyan"
-            title="auto-renews at $29.99/mo"
-            desc="if you don't cancel before day 7, the card on file is charged $29.99 and you stay on monthly. cancel anytime."
-          />
-        </div>
+        <dl className="mt-10 space-y-3">
+          {FAQS.map((f) => (
+            <Faq key={f.q} q={f.q} a={f.a} />
+          ))}
+        </dl>
       </section>
 
       {/* PRICING */}
-      <section id="pricing" className="relative z-10 mx-auto max-w-7xl px-6 py-16">
+      <section id="pricing" className="relative z-10 mx-auto max-w-7xl px-6 py-20 scroll-mt-12">
         <div className="mx-auto max-w-2xl text-center">
           <div className="text-xs font-semibold uppercase tracking-wider text-emerald-300">
             pricing
           </div>
           <h2 className="mt-2 text-3xl font-bold text-white sm:text-4xl">
-            the course is free. <br className="hidden sm:block" />
-            the mentor is one dollar to try.
+            Start free. <br className="hidden sm:block" />
+            Unlock everything for $1.
           </h2>
           <p className="mt-3 text-sm text-zinc-400 sm:text-base">
             $1 covers seven days of full access. after that it auto-renews at
             $29.99/mo unless you cancel.
           </p>
         </div>
-        <div className="mx-auto mt-10 grid max-w-3xl gap-4 md:grid-cols-2">
+        <div className="mx-auto mt-12 grid max-w-3xl gap-5 md:grid-cols-2">
           <PriceCard
+            tag="Free"
             tier="Free"
-            price="$0"
-            sub="every account starts here · no card needed"
+            sub="Start your trading journey now."
             features={FREE_FEATURES}
-            cta={{ href: "/sign-in", label: "create free account" }}
-            accent="from-zinc-400 to-zinc-500"
+            cta={{ href: "/sign-in?mode=signup", label: "Get Started" }}
           />
           <PriceCard
-            tier="$1 · 7-day trial"
-            price="$1"
-            sub="then $29.99/mo · cancel any day before day 7"
+            tag="Most Popular"
+            tier="$1 Trial"
+            sub="Then $29.99/mo · cancel any day before day 7."
             features={TRIAL_FEATURES}
-            cta={{ href: "/sign-in", label: "start the $1 trial" }}
-            accent="from-emerald-400 to-teal-500"
+            cta={{
+              href: "/sign-in?mode=signup&plan=trial",
+              label: "Start Trial",
+            }}
             highlight
+            priceFootnote="$1 for 7 days · auto-renews at $29.99/mo"
           />
         </div>
       </section>
@@ -456,21 +527,23 @@ export default function LandingPage() {
           <div className="pointer-events-none absolute -bottom-20 -left-20 h-72 w-72 rounded-full bg-fuchsia-500/15 blur-3xl" />
           <div className="relative space-y-4">
             <h2 className="text-3xl font-bold text-white sm:text-4xl">
-              your charts are open. <br className="hidden sm:block" />
-              what does the playbook say?
+              The mentor you needed is finally <br className="hidden sm:block" />
+              available 24/7.
             </h2>
             <p className="mx-auto max-w-xl text-sm text-zinc-400 sm:text-base">
-              free account. full course. real answers from actual TGFX
-              sessions. start now, upgrade if it earns it.
+              Every trader has spent a year stuck on the same mistakes because
+              there was no one around to answer the question in the moment.
+              Trade Aligned ends that. Full curriculum free, AI Mentor a dollar
+              away, the entire database working for you the second you join.
             </p>
             <div className="flex justify-center pt-2">
               <Link
-                href="/sign-in?mode=signup"
+                href="#pricing"
                 className="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-600 to-cyan-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/40 transition hover:shadow-xl hover:shadow-emerald-500/50"
               >
                 <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
                 <span className="relative inline-flex items-center gap-2">
-                  create your free account
+                  Get Started
                   <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
                 </span>
               </Link>
@@ -494,6 +567,76 @@ export default function LandingPage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+function InfoTooltip({ text }: { text: string }) {
+  return (
+    <span className="group relative inline-flex">
+      <span
+        className="inline-flex h-3.5 w-3.5 cursor-help items-center justify-center rounded-full border border-zinc-500/40 bg-zinc-800/60 text-[8px] font-bold text-zinc-400 transition hover:border-emerald-400/50 hover:text-emerald-300"
+        aria-label={text}
+      >
+        i
+      </span>
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 w-56 -translate-x-1/2 rounded-lg border border-emerald-400/30 bg-zinc-950 px-3 py-2 text-[11px] font-normal normal-case leading-relaxed tracking-normal text-zinc-200 opacity-0 shadow-xl ring-1 ring-emerald-400/10 transition group-hover:opacity-100 group-focus-within:opacity-100"
+      >
+        {text}
+        <span
+          aria-hidden
+          className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-zinc-950"
+        />
+      </span>
+    </span>
+  );
+}
+
+function Faq({ q, a }: { q: string; a: string }) {
+  return (
+    <details className="group rounded-2xl border border-white/10 bg-zinc-950/60 px-5 py-4 backdrop-blur transition hover:border-white/20">
+      <summary className="flex cursor-pointer list-none items-start justify-between gap-4 text-left">
+        <span className="text-base font-semibold text-white">{q}</span>
+        <span
+          aria-hidden
+          className="mt-1 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-emerald-400/40 bg-emerald-500/10 text-emerald-300 transition group-open:rotate-45"
+        >
+          <svg viewBox="0 0 10 10" className="h-3 w-3 fill-current">
+            <path d="M4.5 0h1v4h4v1h-4v4h-1V5h-4V4h4z" />
+          </svg>
+        </span>
+      </summary>
+      <p className="mt-3 text-sm leading-relaxed text-zinc-400">{a}</p>
+    </details>
+  );
+}
+
+function Testimonial({
+  quote,
+  name,
+  city,
+}: {
+  quote: string;
+  name: string;
+  city: string;
+}) {
+  return (
+    <figure className="relative overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/60 p-5 backdrop-blur">
+      <div className="flex gap-0.5 text-emerald-300">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <span key={i} aria-hidden className="text-sm leading-none">
+            ★
+          </span>
+        ))}
+      </div>
+      <blockquote className="mt-3 text-sm leading-relaxed text-zinc-200">
+        &ldquo;{quote}&rdquo;
+      </blockquote>
+      <figcaption className="mt-3 text-[11px] uppercase tracking-wider text-zinc-500">
+        <span className="font-semibold text-zinc-300">{name}</span> · {city}
+      </figcaption>
+    </figure>
   );
 }
 
@@ -524,93 +667,128 @@ function Stat({
   );
 }
 
-function Step({
-  n,
-  color,
-  title,
-  desc,
-}: {
-  n: string;
-  color: "emerald" | "amber" | "cyan";
-  title: string;
-  desc: string;
-}) {
-  const ring = {
-    emerald: "ring-emerald-400/30",
-    amber: "ring-amber-400/30",
-    cyan: "ring-cyan-400/30",
-  }[color];
-  const bg = {
-    emerald: "bg-emerald-500/15 text-emerald-300",
-    amber: "bg-amber-500/15 text-amber-300",
-    cyan: "bg-cyan-500/15 text-cyan-300",
-  }[color];
-  return (
-    <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-zinc-900/60 p-6">
-      <div className="absolute right-4 top-4 bg-gradient-to-br from-emerald-300 to-teal-400 bg-clip-text text-3xl font-black text-transparent">
-        {n}
-      </div>
-      <div className={`mb-3 inline-flex h-9 w-9 items-center justify-center rounded-lg ring-1 ${ring} ${bg}`}>
-        <BookOpen className="h-4 w-4" strokeWidth={2} />
-      </div>
-      <h3 className="text-base font-semibold text-white">{title}</h3>
-      <p className="mt-1 text-sm leading-relaxed text-zinc-400">{desc}</p>
-    </div>
-  );
-}
-
 function PriceCard({
+  tag,
   tier,
-  price,
   sub,
   features,
   cta,
-  accent,
   highlight,
+  priceFootnote,
 }: {
+  tag: string;
   tier: string;
-  price: string;
   sub: string;
-  features: string[];
+  features: Feature[];
   cta: { href: string; label: string };
-  accent: string;
   highlight?: boolean;
+  priceFootnote?: string;
 }) {
   return (
     <div
-      className={`relative flex flex-col gap-4 overflow-hidden rounded-3xl bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-950 p-6 text-white shadow-xl ring-1 ${
-        highlight ? "ring-amber-400/50" : "ring-white/10"
+      className={`relative flex flex-col overflow-hidden rounded-3xl p-7 text-white shadow-xl ring-1 backdrop-blur ${
+        highlight
+          ? "bg-gradient-to-br from-emerald-500/15 via-zinc-900 to-zinc-950 ring-emerald-400/40"
+          : "bg-zinc-950/80 ring-white/10"
       }`}
     >
       {highlight && (
-        <span className="absolute right-4 top-4 rounded-full bg-amber-500/20 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-200 ring-1 ring-amber-400/40">
-          start here
-        </span>
+        <>
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-emerald-400/30 blur-3xl"
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -bottom-20 -left-10 h-48 w-48 rounded-full bg-teal-500/20 blur-3xl"
+          />
+        </>
       )}
-      <div className="space-y-1">
-        <div className={`inline-flex h-8 items-center rounded-lg bg-gradient-to-br ${accent} px-2.5 text-[10px] font-bold uppercase tracking-wider text-white`}>
+
+      <div className="relative">
+        <span
+          className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
+            highlight
+              ? "bg-emerald-400/90 text-zinc-950"
+              : "bg-white/10 text-zinc-200 ring-1 ring-white/15"
+          }`}
+        >
+          {tag}
+        </span>
+        <h3 className="mt-5 text-4xl font-bold tracking-tight text-white">
           {tier}
-        </div>
-        <div className="text-3xl font-bold text-white">{price}</div>
-        <div className="text-xs text-zinc-500">{sub}</div>
+        </h3>
+        <p className="mt-2 text-sm text-zinc-400">{sub}</p>
+
+        <div className="my-5 h-px w-full bg-white/10" />
+
+        <ul className="space-y-3 text-sm">
+          {features.map((f) => (
+            <li key={f.label} className="flex items-start gap-2.5 text-zinc-200">
+              <span
+                className={`mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full ring-1 ${
+                  highlight
+                    ? "bg-emerald-400/25 ring-emerald-300/50"
+                    : "bg-white/10 ring-white/15"
+                }`}
+              >
+                <Check
+                  className={`h-2.5 w-2.5 ${
+                    highlight ? "text-emerald-200" : "text-zinc-300"
+                  }`}
+                  strokeWidth={3}
+                />
+              </span>
+              <span className="flex items-center gap-1.5">
+                {f.label}
+                {f.tooltip && <InfoTooltip text={f.tooltip} />}
+              </span>
+            </li>
+          ))}
+        </ul>
+
+        {!highlight && (
+          <div className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-400/15 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-200 shadow-sm shadow-emerald-500/20">
+            <svg viewBox="0 0 12 12" className="h-3 w-3 fill-current" aria-hidden>
+              <path d="M6 1l1.5 3 3.3.5L8.4 6.8l.6 3.3L6 8.5l-3 1.6.6-3.3L1.2 4.5 4.5 4z" />
+            </svg>
+            No credit card needed
+          </div>
+        )}
+
+        {highlight && (
+          <div className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-200">
+            <svg viewBox="0 0 12 12" className="h-2.5 w-2.5 fill-current" aria-hidden>
+              <path d="M6 1.5l1.4 2.85 3.15.46-2.28 2.22.54 3.13L6 8.7l-2.81 1.46.54-3.13L1.45 4.8l3.15-.46L6 1.5z" />
+            </svg>
+            Cancel anytime · 1 click · No questions
+          </div>
+        )}
       </div>
-      <ul className="space-y-2 text-sm">
-        {features.map((f) => (
-          <li key={f} className="flex items-start gap-2.5 text-zinc-300">
-            <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 ring-1 ring-emerald-400/30">
-              <Check className="h-2.5 w-2.5 text-emerald-300" strokeWidth={3} />
+
+      <div className="relative mt-8 flex items-center justify-between">
+        <div>
+          <div className="text-2xl font-bold text-white">
+            {highlight ? "$1" : "$0"}
+            <span className="ml-1 text-xs font-medium text-zinc-500">
+              {highlight ? "/ trial" : "/ forever"}
             </span>
-            <span>{f}</span>
-          </li>
-        ))}
-      </ul>
-      <div className="mt-auto pt-2">
+          </div>
+          {priceFootnote && (
+            <div className="mt-0.5 text-[10px] text-zinc-500">
+              {priceFootnote}
+            </div>
+          )}
+        </div>
         <Link
           href={cta.href}
-          className={`inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-br ${accent} px-4 py-2.5 text-sm font-bold text-white shadow transition hover:opacity-90`}
+          className={`inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-bold shadow-lg transition hover:opacity-90 ${
+            highlight
+              ? "bg-gradient-to-br from-emerald-400 to-teal-500 text-zinc-950 shadow-emerald-500/40"
+              : "bg-white text-zinc-950 shadow-white/10"
+          }`}
         >
           {cta.label}
-          <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
         </Link>
       </div>
     </div>

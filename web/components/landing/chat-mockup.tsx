@@ -100,23 +100,24 @@ export function ChatMockup() {
               viewBox="0 0 200 100"
               preserveAspectRatio="none"
             >
-              {/* Wick + body candle helper coordinates */}
+              {/* Wick + body candle helper coordinates. Each candle opens at
+                  the previous candle's close — no synthetic gaps between bars. */}
               {[
                 { x: 14, oc: [62, 70], wick: [56, 76], up: false },
-                { x: 26, oc: [66, 60], wick: [55, 72], up: true },
-                { x: 38, oc: [58, 52], wick: [48, 64], up: true },
-                { x: 50, oc: [55, 60], wick: [50, 66], up: false },
-                { x: 62, oc: [60, 48], wick: [44, 64], up: true },
-                { x: 74, oc: [50, 44], wick: [38, 56], up: true },
-                { x: 86, oc: [46, 50], wick: [42, 58], up: false },
-                { x: 98, oc: [50, 38], wick: [33, 56], up: true },
-                { x: 110, oc: [40, 34], wick: [28, 46], up: true },
-                { x: 122, oc: [36, 42], wick: [32, 48], up: false },
-                { x: 134, oc: [42, 30], wick: [25, 48], up: true },
-                { x: 146, oc: [32, 26], wick: [20, 38], up: true },
-                { x: 158, oc: [28, 32], wick: [24, 38], up: false },
-                { x: 170, oc: [32, 22], wick: [16, 38], up: true },
-                { x: 182, oc: [22, 18], wick: [12, 28], up: true },
+                { x: 26, oc: [70, 64], wick: [60, 74], up: true },
+                { x: 38, oc: [64, 58], wick: [54, 67], up: true },
+                { x: 50, oc: [58, 63], wick: [55, 67], up: false },
+                { x: 62, oc: [63, 51], wick: [47, 67], up: true },
+                { x: 74, oc: [51, 45], wick: [40, 55], up: true },
+                { x: 86, oc: [45, 49], wick: [41, 53], up: false },
+                { x: 98, oc: [49, 37], wick: [32, 53], up: true },
+                { x: 110, oc: [37, 31], wick: [26, 41], up: true },
+                { x: 122, oc: [31, 37], wick: [29, 41], up: false },
+                { x: 134, oc: [37, 25], wick: [20, 41], up: true },
+                { x: 146, oc: [25, 19], wick: [14, 31], up: true },
+                { x: 158, oc: [19, 23], wick: [15, 29], up: false },
+                { x: 170, oc: [23, 13], wick: [8, 29], up: true },
+                { x: 182, oc: [13, 9], wick: [4, 19], up: true },
               ].map((c, i) => {
                 const color = c.up ? "#34d399" : "#fb7185";
                 const [openY, closeY] = c.oc;

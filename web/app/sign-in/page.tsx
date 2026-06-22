@@ -11,6 +11,11 @@ type Mode = "signin" | "signup" | "forgot";
 function AuthForm() {
   const router = useRouter();
   const params = useSearchParams();
+  // `?plan=trial` flips signup into the Stripe-checkout-first flow: after
+  // Supabase creates the user we POST to /api/stripe/checkout and bounce them
+  // to the hosted Stripe page rather than the in-app default `next`.
+  const plan = params.get("plan");
+  const isTrialFlow = plan === "trial";
   const next = params.get("next") || "/chat";
   const initialMode: Mode = params.get("mode") === "signup" ? "signup" : "signin";
 
@@ -59,11 +64,12 @@ function AuthForm() {
       }
 
       if (mode === "signup") {
+        const cleanEmail = email.trim().toLowerCase();
         const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(
           next
         )}`;
         const { data, error } = await sb.auth.signUp({
-          email: email.trim().toLowerCase(),
+          email: cleanEmail,
           password,
           options: { emailRedirectTo: redirectTo },
         });
@@ -71,8 +77,28 @@ function AuthForm() {
           setError(error.message);
           return;
         }
-        // If email confirmation is OFF in the Supabase project, Supabase
-        // returns a session here and we can jump straight in.
+
+        // Trial flow: hand the user straight to Stripe Checkout so payment
+        // happens before they ever see the in-app paywall. Works in both
+        // session-granted and confirm-email-required modes — Stripe captures
+        // payment now, the webhook flips the user's tier once paid.
+        if (isTrialFlow) {
+          const res = await fetch("/api/stripe/checkout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ plan: "trial", email: cleanEmail }),
+          });
+          const payload = (await res.json()) as { url?: string; error?: string };
+          if (!res.ok || !payload.url) {
+            setError(payload.error || "could not start checkout.");
+            return;
+          }
+          window.location.href = payload.url;
+          return;
+        }
+
+        // Standard signup: if email confirmation is OFF Supabase returns a
+        // session immediately and we jump into the app.
         if (data.session) {
           router.push(next);
           router.refresh();
@@ -103,14 +129,18 @@ function AuthForm() {
     mode === "signin"
       ? "welcome back"
       : mode === "signup"
-      ? "create your account"
+      ? isTrialFlow
+        ? "start your $1 trial"
+        : "create your account"
       : "reset your password";
 
   const sub =
     mode === "signin"
       ? "sign in with your email and password."
       : mode === "signup"
-      ? "use any email + a password you'll remember."
+      ? isTrialFlow
+        ? "create your account, then we'll send you to Stripe to enter your card."
+        : "use any email + a password you'll remember."
       : "we'll email you a link to set a new password.";
 
   return (
@@ -272,7 +302,9 @@ function AuthForm() {
                         {mode === "signin"
                           ? "sign in"
                           : mode === "signup"
-                          ? "create account"
+                          ? isTrialFlow
+                            ? "continue to payment"
+                            : "create account"
                           : "send reset link"}
                         <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
                       </>
