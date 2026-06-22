@@ -12,7 +12,7 @@ import { useCallback, useEffect, useState } from "react";
 import { CandleChart } from "./candle-chart";
 import { generateScenario, type Scenario } from "@/lib/candle-gen";
 import { recordAttempt } from "@/lib/progress";
-import { charge } from "@/lib/credits";
+import { broadcastBalance } from "@/lib/use-credit-balance";
 
 type Stats = { correct: number; total: number; streak: number };
 
@@ -23,16 +23,36 @@ export function ReplayView() {
   const [stats, setStats] = useState<Stats>({ correct: 0, total: 0, streak: 0 });
   const [started, setStarted] = useState(false);
 
-  const nextRound = useCallback(() => {
-    const c = charge("quiz_question");
-    if (!c.ok) { alert(`out of credits, top up from the pricing page.`); return; }
+  const nextRound = useCallback(async () => {
+    // Server-side debit. The endpoint returns the new balance which we
+    // broadcast so the sidebar pill updates instantly.
     setSelected(null);
     setLoading(true);
-    // wrap in setTimeout so the loader actually flashes
-    setTimeout(() => {
+    try {
+      const r = await fetch("/api/credits/charge", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "drill_replay" }),
+      });
+      if (r.status === 402) {
+        const j = await r.json();
+        if (typeof j.balance === "number") broadcastBalance(j.balance);
+        alert(
+          "out of credits — start your 7-day free trial from the pricing page to keep going."
+        );
+        setLoading(false);
+        return;
+      }
+      if (!r.ok) {
+        setLoading(false);
+        return;
+      }
+      const j = (await r.json()) as { balance: number };
+      broadcastBalance(j.balance);
       setScenario(generateScenario());
+    } finally {
       setLoading(false);
-    }, 120);
+    }
   }, []);
 
   useEffect(() => {

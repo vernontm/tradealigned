@@ -1,4 +1,6 @@
+import { chargeCredits } from "@/lib/credits-server";
 import { supabase } from "@/lib/supabase";
+import { getCurrentAppUser } from "@/lib/supabase-server";
 
 type TradeRow = {
   id: string;
@@ -28,6 +30,23 @@ function toMediaUrl(absPath: string | null): string | null {
  *   lost, price went DOWN (the stop side). Same logic mirrored for shorts.
  */
 export async function GET() {
+  // Charge before the DB read so we never serve a round we won't be paid for.
+  const appUser = await getCurrentAppUser();
+  if (!appUser) {
+    return Response.json({ error: "not authenticated" }, { status: 401 });
+  }
+  const charge = await chargeCredits(appUser.id, "drill_replay");
+  if (!charge.ok) {
+    return Response.json(
+      {
+        error: "insufficient_credits",
+        required: charge.required,
+        balance: charge.balance,
+      },
+      { status: 402 }
+    );
+  }
+
   const { data, error } = await supabase
     .from("trades")
     .select(
@@ -76,5 +95,6 @@ export async function GET() {
     ray_setup: trade.setup_type,
     ray_reasoning: trade.reasoning,
     meta: { video_date: date },
+    credits_balance: charge.balance,
   });
 }

@@ -3,6 +3,7 @@
 import { ExternalLink, LogOut, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { CreditsBadge } from "@/components/credits-badge";
 import { NAV } from "@/lib/nav";
 import { useCurrentUser } from "@/lib/use-current-user";
 
@@ -90,6 +91,12 @@ export function Sidebar() {
           loading="lazy"
         />
       </a>
+
+      {email && (
+        <div className="mt-2">
+          <CreditsBadge />
+        </div>
+      )}
 
       <div className="mt-2 flex items-center gap-2">
         <Link

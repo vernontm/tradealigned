@@ -3,7 +3,7 @@
 import { CheckCircle2, Loader2, RotateCw, XCircle } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { recordAttempt } from "@/lib/progress";
-import { charge } from "@/lib/credits";
+import { broadcastBalance } from "@/lib/use-credit-balance";
 
 type Question = {
   id: string;
@@ -35,14 +35,24 @@ export function DrillView() {
   const [started, setStarted] = useState(false);
 
   const nextQuestion = useCallback(async () => {
-    const r = charge("quiz_question");
-    if (!r.ok) { alert(`out of credits, top up from the pricing page.`); return; }
     setSelected(null);
     setLoading(true);
     try {
       const r = await fetch("/api/drill/question");
+      if (r.status === 402) {
+        const j = await r.json();
+        if (typeof j.balance === "number") broadcastBalance(j.balance);
+        alert(
+          "out of credits — start your 7-day free trial from the pricing page to keep going."
+        );
+        return;
+      }
       if (!r.ok) throw new Error("no question");
-      setQ((await r.json()) as Question);
+      const j = (await r.json()) as Question & { credits_balance?: number };
+      if (typeof j.credits_balance === "number") {
+        broadcastBalance(j.credits_balance);
+      }
+      setQ(j);
     } finally {
       setLoading(false);
     }

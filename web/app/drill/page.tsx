@@ -1,10 +1,6 @@
 import { Crosshair, Gauge, PlayCircle, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
-import { TierGate } from "@/components/tier-gate";
-
-const DRILL_PITCH =
-  "practice on real charts pulled from Ray's trades. call direction, set stops, speed-read patterns, and see how each round actually played out.";
 
 const MODES = [
   {
@@ -44,7 +40,6 @@ const MODES = [
 export default function Page() {
   return (
     <AppShell title="Daily Drill" subtitle="train your eye, sharpen your reads">
-      <TierGate feature="The Daily Drill arcade" pitch={DRILL_PITCH}>
       <div className="h-full min-h-0 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6">
         <div className="mx-auto max-w-5xl">
           <div className="mb-6 flex items-end justify-between gap-3">
@@ -110,7 +105,6 @@ export default function Page() {
           </div>
         </div>
       </div>
-      </TierGate>
     </AppShell>
   );
 }

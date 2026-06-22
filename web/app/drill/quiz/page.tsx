@@ -2,29 +2,23 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { DrillView } from "@/components/drill-view";
-import { TierGate } from "@/components/tier-gate";
 
 export default function Page() {
   return (
     <AppShell title="Setup Quiz" subtitle="would you take this trade? identify the setup.">
-      <TierGate
-        feature="Setup Quiz"
-        pitch="discrimination training on Ray's real entries. would you take this trade? compare your read to his."
-      >
-        <div className="flex h-full min-h-0 flex-col">
-          <div className="shrink-0 border-b border-zinc-200/60 bg-white/60 px-5 py-2.5">
-            <Link
-              href="/drill"
-              className="inline-flex items-center gap-1.5 text-[11px] font-medium text-zinc-500 hover:text-zinc-800"
-            >
-              <ArrowLeft className="h-3 w-3" /> back to drills
-            </Link>
-          </div>
-          <div className="min-h-0 flex-1">
-            <DrillView />
-          </div>
+      <div className="flex h-full min-h-0 flex-col">
+        <div className="shrink-0 border-b border-zinc-200/60 bg-white/60 px-5 py-2.5">
+          <Link
+            href="/drill"
+            className="inline-flex items-center gap-1.5 text-[11px] font-medium text-zinc-500 hover:text-zinc-800"
+          >
+            <ArrowLeft className="h-3 w-3" /> back to drills
+          </Link>
         </div>
-      </TierGate>
+        <div className="min-h-0 flex-1">
+          <DrillView />
+        </div>
+      </div>
     </AppShell>
   );
 }

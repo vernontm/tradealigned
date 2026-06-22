@@ -1,5 +1,7 @@
-import { supabase } from "@/lib/supabase";
+import { chargeCredits } from "@/lib/credits-server";
 import { toMediaUrl } from "@/lib/media";
+import { supabase } from "@/lib/supabase";
+import { getCurrentAppUser } from "@/lib/supabase-server";
 
 type TradeRow = {
   id: string;
@@ -40,6 +42,22 @@ function tooSimilar(a: string, b: string): boolean {
 }
 
 export async function GET() {
+  const appUser = await getCurrentAppUser();
+  if (!appUser) {
+    return Response.json({ error: "not authenticated" }, { status: 401 });
+  }
+  const charge = await chargeCredits(appUser.id, "drill_question");
+  if (!charge.ok) {
+    return Response.json(
+      {
+        error: "insufficient_credits",
+        required: charge.required,
+        balance: charge.balance,
+      },
+      { status: 402 }
+    );
+  }
+
   // 50/50 between Would You Take It and Identify Setup
   const kind = Math.random() < 0.5 ? "would_you_take" : "identify_setup";
 
@@ -126,6 +144,7 @@ export async function GET() {
         estimated_rr: trade.estimated_rr,
         video_date: videoDate,
       },
+      credits_balance: charge.balance,
     });
   }
 
@@ -177,5 +196,6 @@ export async function GET() {
       estimated_rr: trade.estimated_rr,
       video_date: videoDate,
     },
+    credits_balance: charge.balance,
   });
 }

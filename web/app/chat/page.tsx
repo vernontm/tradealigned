@@ -4,7 +4,6 @@ import { useCallback, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { ChatPane } from "@/components/chat-pane";
 import { PreviewPane, type PreviewCard } from "@/components/preview-pane";
-import { TierGate } from "@/components/tier-gate";
 
 export default function Page() {
   const [cards, setCards] = useState<PreviewCard[]>([]);
@@ -62,23 +61,18 @@ export default function Page() {
 
   return (
     <AppShell
-      title="Mentor Chat"
+      title="Trade AI"
       subtitle="ask, drop a chart, paste a link, grounded in real trades"
     >
-      <TierGate
-        feature="Mentor Chat"
-        pitch="ask Ray anything, drop a chart, get a real answer in his actual voice, every reply cites a real trade or lesson with the timestamp."
-      >
-        <div className="grid h-full min-h-0 grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-          <div className="min-h-0 md:border-r md:border-white/10">
-            <ChatPane onToolResult={onToolResult} />
-          </div>
-          {/* Preview pane hides on mobile to keep the chat full-width */}
-          <div className="hidden min-h-0 md:block">
-            <PreviewPane cards={cards} />
-          </div>
+      <div className="grid h-full min-h-0 grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+        <div className="min-h-0 md:border-r md:border-white/10">
+          <ChatPane onToolResult={onToolResult} />
         </div>
-      </TierGate>
+        {/* Preview pane hides on mobile to keep the chat full-width */}
+        <div className="hidden min-h-0 md:block">
+          <PreviewPane cards={cards} />
+        </div>
+      </div>
     </AppShell>
   );
 }

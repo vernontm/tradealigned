@@ -25,6 +25,7 @@ import {
   saveSession,
   setActiveId,
 } from "@/lib/chat-history";
+import { useCreditBalance } from "@/lib/use-credit-balance";
 
 type Props = {
   onToolResult: (toolName: string, result: unknown) => void;
@@ -79,8 +80,15 @@ export function ChatPane({ onToolResult }: Props) {
     setActiveId(sessionId);
   }, [sessionId]);
 
+  const { refresh: refreshCredits } = useCreditBalance();
+
   const { messages, sendMessage, status, setMessages } = useChat({
     transport: new DefaultChatTransport({ api: "/api/chat" }),
+    onFinish: () => {
+      // Each completed turn just spent credits server-side — refresh the
+      // sidebar pill so the new total appears without a page reload.
+      refreshCredits();
+    },
   });
 
   // Hydrate the chat hook once we've read from storage

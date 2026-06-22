@@ -6,8 +6,10 @@ const anthropic = createAnthropic({
 });
 import { convertToModelMessages, stepCountIs, streamText, type UIMessage } from "ai";
 import { z } from "zod";
+import { chargeCredits } from "@/lib/credits-server";
 import { formatContextForLLM, retrieveContext } from "@/lib/retrieve";
 import { supabase } from "@/lib/supabase";
+import { getCurrentAppUser } from "@/lib/supabase-server";
 
 export const maxDuration = 60;
 
@@ -65,16 +67,42 @@ export async function POST(req: Request) {
 
   // Pull the most recent user message text + flag if an image is attached
   const lastUser = [...messages].reverse().find((m) => m.role === "user");
+  const hasImage = lastUser
+    ? (lastUser.parts ?? []).some(
+        (p) =>
+          p.type === "file" || (p as { type: string }).type === "image"
+      )
+    : false;
+
+  // Charge BEFORE the LLM call so insufficient-credit users never get the
+  // streamed reply. Chart uploads cost more because vision is pricier.
+  const appUser = await getCurrentAppUser();
+  if (!appUser) {
+    return Response.json({ error: "not authenticated" }, { status: 401 });
+  }
+  const charge = await chargeCredits(
+    appUser.id,
+    hasImage ? "chart_roast" : "chat"
+  );
+  if (!charge.ok) {
+    return Response.json(
+      {
+        error: "insufficient_credits",
+        required: charge.required,
+        balance: charge.balance,
+        message:
+          "out of credits. start your 7-day free trial to keep using Trade AI.",
+      },
+      { status: 402 }
+    );
+  }
+
   let contextText = "";
   if (lastUser) {
     const queryText = lastUser.parts
       .filter((p) => p.type === "text")
       .map((p) => (p as { type: "text"; text: string }).text)
       .join(" ");
-    const hasImage = (lastUser.parts ?? []).some(
-      (p) =>
-        p.type === "file" || (p as { type: string }).type === "image"
-    );
     // Drive retrieval. If there's an image but no meaningful text, fall back to
     // a generic chart-read query so we still pull similar setups for the agent.
     const effectiveQuery = queryText.trim()

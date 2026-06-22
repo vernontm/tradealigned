@@ -12,6 +12,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { NAV } from "@/lib/nav";
 import { useCurrentUser } from "@/lib/use-current-user";
+import { CreditsBadge } from "@/components/credits-badge";
 
 export function MobileNav() {
   const pathname = usePathname();
@@ -130,6 +131,12 @@ export function MobileNav() {
                 </Link>
               )}
             </nav>
+
+            {email && (
+              <div className="mt-2">
+                <CreditsBadge />
+              </div>
+            )}
 
             <div className="mt-2 flex items-center gap-2">
               <Link
