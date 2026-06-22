@@ -39,3 +39,4 @@ downloads/
 # --- editor ---
 .vscode/
 .idea/
+.vercel
