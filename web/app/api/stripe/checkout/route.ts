@@ -83,10 +83,21 @@ export async function POST(req: Request) {
     );
   }
 
+  // Trial mixes one-time + recurring line items so the $1 fee bills today
+  // and the $29.99/mo subscription begins after the 7-day trial. Stripe's
+  // Checkout supports this combo in subscription mode; add_invoice_items
+  // (the raw Subscriptions API approach) is rejected here.
+  const lineItems = isTrial
+    ? [
+        { price: priceId, quantity: 1 },
+        { price: trialSetupPrice!, quantity: 1 },
+      ]
+    : [{ price: priceId, quantity: 1 }];
+
   const session = await stripe.checkout.sessions.create({
     mode: planCfg.recurring ? "subscription" : "payment",
     customer: customerId,
-    line_items: [{ price: priceId, quantity: 1 }],
+    line_items: lineItems,
     success_url: `${origin}/account?checkout=success&plan=${plan}`,
     cancel_url: `${origin}/pricing?checkout=cancelled`,
     allow_promotion_codes: true,
@@ -99,12 +110,7 @@ export async function POST(req: Request) {
       ? {
           subscription_data: {
             metadata: { ray_ai_plan_id: plan, app_user_id: user.id },
-            ...(isTrial
-              ? {
-                  trial_period_days: 7,
-                  add_invoice_items: [{ price: trialSetupPrice! }],
-                }
-              : {}),
+            ...(isTrial ? { trial_period_days: 7 } : {}),
           },
         }
       : {
