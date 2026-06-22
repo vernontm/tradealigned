@@ -4,9 +4,9 @@ import { CheckCircle2, Loader2, RotateCw, XCircle } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { recordAttempt } from "@/lib/progress";
 import { CREDIT_COSTS } from "@/lib/credit-costs";
-import { broadcastBalance } from "@/lib/use-credit-balance";
+import { chargeForAction } from "@/lib/use-credit-balance";
 
-const QUESTION_COST = CREDIT_COSTS.drill_question;
+const SESSION_COST = CREDIT_COSTS.drill_question;
 
 type Question = {
   id: string;
@@ -37,24 +37,14 @@ export function DrillView() {
   const [stats, setStats] = useState<Stats>({ correct: 0, total: 0, streak: 0 });
   const [started, setStarted] = useState(false);
 
+  // Free per-question fetch — the session was already paid for at start().
   const nextQuestion = useCallback(async () => {
     setSelected(null);
     setLoading(true);
     try {
       const r = await fetch("/api/drill/question");
-      if (r.status === 402) {
-        const j = await r.json();
-        if (typeof j.balance === "number") broadcastBalance(j.balance);
-        alert(
-          "out of credits — start your 7-day free trial from the pricing page to keep going."
-        );
-        return;
-      }
       if (!r.ok) throw new Error("no question");
-      const j = (await r.json()) as Question & { credits_balance?: number };
-      if (typeof j.credits_balance === "number") {
-        broadcastBalance(j.credits_balance);
-      }
+      const j = (await r.json()) as Question;
       setQ(j);
     } finally {
       setLoading(false);
@@ -65,7 +55,18 @@ export function DrillView() {
     if (started && !q) nextQuestion();
   }, [started, q, nextQuestion]);
 
-  const start = () => {
+  // Charge ONCE here. Playing many questions in this session is free until
+  // the user leaves and starts a new session.
+  const start = async () => {
+    const outcome = await chargeForAction("drill_question");
+    if (!outcome.ok) {
+      if (outcome.reason === "insufficient") {
+        alert(
+          "out of credits — start your 7-day free trial from the pricing page to keep going."
+        );
+      }
+      return;
+    }
     setStats({ correct: 0, total: 0, streak: 0 });
     setStarted(true);
   };
@@ -104,7 +105,7 @@ export function DrillView() {
           >
             start a session
             <span className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-semibold">
-              {QUESTION_COST} credits
+              {SESSION_COST} credits
             </span>
             →
           </button>
@@ -237,9 +238,6 @@ export function DrillView() {
               >
                 <RotateCw className="h-4 w-4" />
                 next question
-                <span className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-semibold">
-                  {QUESTION_COST} credits
-                </span>
               </button>
             </div>
           )}

@@ -12,8 +12,11 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CandleChart } from "./candle-chart";
 import { generateEurUsdSeries, type Candle } from "@/lib/candle-gen";
+import { CREDIT_COSTS } from "@/lib/credit-costs";
 import { recordAttempt } from "@/lib/progress";
-import { charge } from "@/lib/credits";
+import { chargeForAction } from "@/lib/use-credit-balance";
+
+const SESSION_COST = CREDIT_COSTS.drill_sniper;
 
 const TARGET_PIPS = 10;
 const PIP = 0.0001;
@@ -56,9 +59,9 @@ export function SniperView() {
   const playRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Free per-round — the session was already paid for when the player hit
+  // start (see startSession below).
   const startRound = useCallback(() => {
-    const c = charge("quiz_question");
-    if (!c.ok) { alert(`out of credits, top up from the pricing page.`); return; }
     setLoading(true);
     setTimeout(() => {
       setSeries(generateEurUsdSeries());
@@ -70,6 +73,20 @@ export function SniperView() {
       setPlaying(false);
       setLoading(false);
     }, 60);
+  }, []);
+
+  // Charge ONCE at session start.
+  const startSession = useCallback(async () => {
+    const outcome = await chargeForAction("drill_sniper");
+    if (!outcome.ok) {
+      if (outcome.reason === "insufficient") {
+        alert(
+          "out of credits — start your 7-day free trial from the pricing page to keep going."
+        );
+      }
+      return;
+    }
+    setStarted(true);
   }, []);
 
   useEffect(() => {
@@ -254,10 +271,14 @@ export function SniperView() {
           </p>
           <button
             type="button"
-            onClick={() => setStarted(true)}
-            className="rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 px-5 py-3 text-sm font-semibold text-white shadow-md transition hover:opacity-90"
+            onClick={startSession}
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 px-5 py-3 text-sm font-semibold text-white shadow-md transition hover:opacity-90"
           >
-            start sniping →
+            start sniping
+            <span className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-semibold">
+              {SESSION_COST} credits
+            </span>
+            →
           </button>
         </div>
       </div>

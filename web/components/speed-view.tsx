@@ -9,8 +9,11 @@ import {
   XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { CREDIT_COSTS } from "@/lib/credit-costs";
 import { recordAttempt } from "@/lib/progress";
-import { charge } from "@/lib/credits";
+import { chargeForAction } from "@/lib/use-credit-balance";
+
+const SESSION_COST = CREDIT_COSTS.drill_speed;
 
 type Question = {
   id: string;
@@ -44,9 +47,8 @@ export function SpeedView() {
   const [countdown, setCountdown] = useState(FLASH_SECONDS);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Free per-round — the session was paid for at start().
   const next = useCallback(async () => {
-    const c = charge("quiz_question");
-    if (!c.ok) { alert(`out of credits, top up from the pricing page.`); return; }
     setSelected(null);
     setShowingChart(false);
     setLoading(true);
@@ -91,7 +93,17 @@ export function SpeedView() {
     };
   }, [q, selected, showingChart]);
 
-  const start = () => {
+  // Charge ONCE at session start.
+  const start = async () => {
+    const outcome = await chargeForAction("drill_speed");
+    if (!outcome.ok) {
+      if (outcome.reason === "insufficient") {
+        alert(
+          "out of credits — start your 7-day free trial from the pricing page to keep going."
+        );
+      }
+      return;
+    }
     setStats({ correct: 0, total: 0, streak: 0 });
     setStarted(true);
   };
@@ -132,9 +144,13 @@ export function SpeedView() {
           <button
             type="button"
             onClick={start}
-            className="rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-600 px-5 py-3 text-sm font-semibold text-white shadow-md transition hover:opacity-90"
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-600 px-5 py-3 text-sm font-semibold text-white shadow-md transition hover:opacity-90"
           >
-            start speed reading →
+            start speed reading
+            <span className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-semibold">
+              {SESSION_COST} credits
+            </span>
+            →
           </button>
         </div>
       </div>

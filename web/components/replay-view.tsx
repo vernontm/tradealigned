@@ -13,9 +13,9 @@ import { CandleChart } from "./candle-chart";
 import { generateScenario, type Scenario } from "@/lib/candle-gen";
 import { CREDIT_COSTS } from "@/lib/credit-costs";
 import { recordAttempt } from "@/lib/progress";
-import { broadcastBalance } from "@/lib/use-credit-balance";
+import { chargeForAction } from "@/lib/use-credit-balance";
 
-const ROUND_COST = CREDIT_COSTS.drill_replay;
+const SESSION_COST = CREDIT_COSTS.drill_replay;
 
 type Stats = { correct: number; total: number; streak: number };
 
@@ -26,43 +26,31 @@ export function ReplayView() {
   const [stats, setStats] = useState<Stats>({ correct: 0, total: 0, streak: 0 });
   const [started, setStarted] = useState(false);
 
-  const nextRound = useCallback(async () => {
-    // Server-side debit. The endpoint returns the new balance which we
-    // broadcast so the sidebar pill updates instantly.
+  // Free per-round — the session was already paid for at start().
+  const nextRound = useCallback(() => {
     setSelected(null);
     setLoading(true);
-    try {
-      const r = await fetch("/api/credits/charge", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ action: "drill_replay" }),
-      });
-      if (r.status === 402) {
-        const j = await r.json();
-        if (typeof j.balance === "number") broadcastBalance(j.balance);
-        alert(
-          "out of credits — start your 7-day free trial from the pricing page to keep going."
-        );
-        setLoading(false);
-        return;
-      }
-      if (!r.ok) {
-        setLoading(false);
-        return;
-      }
-      const j = (await r.json()) as { balance: number };
-      broadcastBalance(j.balance);
+    setTimeout(() => {
       setScenario(generateScenario());
-    } finally {
       setLoading(false);
-    }
+    }, 120);
   }, []);
 
   useEffect(() => {
     if (started && !scenario) nextRound();
   }, [started, scenario, nextRound]);
 
-  const start = () => {
+  // Charge ONCE at session start.
+  const start = async () => {
+    const outcome = await chargeForAction("drill_replay");
+    if (!outcome.ok) {
+      if (outcome.reason === "insufficient") {
+        alert(
+          "out of credits — start your 7-day free trial from the pricing page to keep going."
+        );
+      }
+      return;
+    }
     setStats({ correct: 0, total: 0, streak: 0 });
     setStarted(true);
   };
@@ -101,7 +89,7 @@ export function ReplayView() {
           >
             start replay session
             <span className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-semibold">
-              {ROUND_COST} credits
+              {SESSION_COST} credits
             </span>
             →
           </button>
@@ -200,9 +188,6 @@ export function ReplayView() {
               >
                 <RotateCw className="h-4 w-4" />
                 next chart
-                <span className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-semibold">
-                  {ROUND_COST} credits
-                </span>
               </button>
             </div>
           )}

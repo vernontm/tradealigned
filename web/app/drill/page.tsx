@@ -21,6 +21,15 @@ type Mode = {
 // for now because the question pool is still being curated.
 const MODES: Mode[] = [
   {
+    href: "/drill/sniper",
+    label: "Sniper Mode",
+    desc: "trade a live candle replay. enter long or short, set your stop, target +10 pips. don't get stopped out.",
+    icon: Crosshair,
+    status: "live",
+    accent: "from-rose-500 to-pink-600",
+    costAction: "drill_sniper",
+  },
+  {
     href: "/drill/quiz",
     label: "Setup Quiz",
     desc: "would you take this trade? identify the setup. discrimination training.",
@@ -38,15 +47,7 @@ const MODES: Mode[] = [
     status: "live",
     accent: "from-sky-500 to-indigo-600",
     costAction: "drill_replay",
-  },
-  {
-    href: "/drill/sniper",
-    label: "Sniper Mode",
-    desc: "trade a live candle replay. enter long or short, set your stop, target +10 pips. don't get stopped out.",
-    icon: Crosshair,
-    status: "live",
-    accent: "from-rose-500 to-pink-600",
-    costAction: "drill_sniper",
+    adminOnly: true,
   },
   {
     href: "/drill/speed",
@@ -56,6 +57,7 @@ const MODES: Mode[] = [
     status: "live",
     accent: "from-violet-500 to-fuchsia-600",
     costAction: "drill_speed",
+    adminOnly: true,
   },
 ];
 
@@ -135,8 +137,8 @@ export default function Page() {
 
           {!isAdmin && (
             <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5 text-center text-xs text-zinc-500">
-              All drill modes are open. Setup Quiz is being curated and will
-              roll out once the question pool is fully reviewed.
+              More drill modes are on the way. Sniper Mode is live now, the
+              rest are being curated and roll out soon.
             </div>
           )}
         </div>

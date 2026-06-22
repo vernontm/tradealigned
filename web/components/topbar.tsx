@@ -2,8 +2,7 @@
 
 import { Bell, Coins, Search } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { getBalance, onCreditsChange } from "@/lib/credits";
+import { useCreditBalance } from "@/lib/use-credit-balance";
 import { MobileNav } from "./mobile-nav";
 import { ViewAsToggle } from "./view-as-toggle";
 
@@ -14,14 +13,11 @@ export function Topbar({
   title: string;
   subtitle?: string;
 }) {
-  const [balance, setBalance] = useState<number | null>(null);
+  // Single source of truth (server balance) shared with the sidebar pill via
+  // the credits:balance event bus, so both displays always match.
+  const { balance } = useCreditBalance();
 
-  useEffect(() => {
-    setBalance(getBalance());
-    return onCreditsChange(() => setBalance(getBalance()));
-  }, []);
-
-  const low = balance !== null && balance < 30;
+  const low = balance !== null && balance < 10;
 
   return (
     <header className="relative flex h-14 shrink-0 items-center justify-between gap-2 overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-950 px-3 shadow-xl ring-1 ring-zinc-800 sm:px-5">

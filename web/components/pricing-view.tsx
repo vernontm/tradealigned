@@ -20,7 +20,6 @@ const TOPUPS = [
     label: "2,000 credits",
     price: "$9.99",
     blurb: "great for a focused review week.",
-    perCredit: "0.5¢ / credit",
     accent: "from-emerald-500 to-teal-600",
     highlighted: false,
   },
@@ -29,7 +28,6 @@ const TOPUPS = [
     label: "5,000 credits",
     price: "$19.99",
     blurb: "best value. study like you mean it.",
-    perCredit: "0.4¢ / credit · save 20%",
     accent: "from-amber-500 to-orange-500",
     highlighted: true,
   },
@@ -148,11 +146,14 @@ export function PricingView() {
 
                   <div className="flex items-baseline gap-1.5">
                     <span className="bg-gradient-to-br from-emerald-300 to-teal-400 bg-clip-text text-5xl font-bold text-transparent">
-                      $29.99
+                      $0
                     </span>
                     <span className="text-sm font-medium text-zinc-500">
-                      / month
+                      for 7 days
                     </span>
+                  </div>
+                  <div className="-mt-3 text-xs text-zinc-500">
+                    then $29.99/mo · cancel anytime before day 7
                   </div>
 
                   <ul className="space-y-2.5 text-sm">
@@ -171,13 +172,13 @@ export function PricingView() {
 
                   <button
                     type="button"
-                    onClick={() => checkout("ray_ai")}
+                    onClick={() => checkout("trial")}
                     disabled={busy !== null}
                     className="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-600 to-cyan-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/40 transition hover:shadow-xl hover:shadow-emerald-500/50 disabled:opacity-60"
                   >
                     <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
                     <span className="relative flex items-center justify-center gap-2">
-                      {busy === "ray_ai" ? (
+                      {busy === "trial" ? (
                         <>
                           <Loader2 className="h-4 w-4 animate-spin" />
                           redirecting…
@@ -185,7 +186,7 @@ export function PricingView() {
                       ) : (
                         <>
                           <Zap className="h-4 w-4" strokeWidth={2.5} />
-                          get Ray AI
+                          Start 7-Day Free Trial
                         </>
                       )}
                     </span>
@@ -257,9 +258,6 @@ export function PricingView() {
                             </div>
                             <div className="mt-0.5 truncate text-xs text-zinc-400">
                               {t.blurb}
-                            </div>
-                            <div className="mt-1 text-[10px] font-medium uppercase tracking-wider text-amber-300/80">
-                              {t.perCredit}
                             </div>
                           </div>
                           <div className="text-right">
