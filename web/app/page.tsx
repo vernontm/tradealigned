@@ -40,9 +40,9 @@ const FREE_FEATURES: Feature[] = [
   },
 ];
 
-// The $1 7-day trial rolls straight into the $29.99/mo plan unless cancelled ,
-// so one card covers both. Underlying Stripe wiring: create subscription with
-// a $1 setup fee + trial_end at signup + 7 days, then auto-bills monthly.
+// 7-day free trial of the $29.99/mo plan. Card collected upfront via
+// payment_method_collection: "always" so Stripe can auto-bill on day 8.
+// Cancel before day 7 → never charged. See /api/stripe/checkout.
 const TRIAL_FEATURES: Feature[] = [
   { label: "Everything in Free" },
   {
@@ -83,7 +83,7 @@ const FAQS = [
   },
   {
     q: "What happens after the 7-day trial?",
-    a: "Your card on file is charged $29.99 on day 8 and you stay on the monthly plan. If you cancel any time before day 7, you're never charged a cent past the $1. There's a one-click cancel button in your account, no email, no support ticket.",
+    a: "Your card on file is charged $29.99 on day 8 and you stay on the monthly plan. If you cancel any time before day 7, you're never charged a cent. There's a one-click cancel button in your account, no email, no support ticket.",
   },
   {
     q: "Is this for prop firm or funded traders?",
@@ -490,11 +490,11 @@ export default function LandingPage() {
           </div>
           <h2 className="mt-2 text-3xl font-bold text-white sm:text-4xl">
             Start free. <br className="hidden sm:block" />
-            Unlock everything for $1.
+            7 days of full access on us.
           </h2>
           <p className="mt-3 text-sm text-zinc-400 sm:text-base">
-            $1 covers seven days of full access. after that it auto-renews at
-            $29.99/mo unless you cancel.
+            7-day free trial of the full platform. after that it auto-renews
+            at $29.99/mo unless you cancel.
           </p>
         </div>
         <div className="mx-auto mt-12 grid max-w-3xl gap-5 md:grid-cols-2">
@@ -507,15 +507,15 @@ export default function LandingPage() {
           />
           <PriceCard
             tag="Most Popular"
-            tier="$1 Trial"
+            tier="Free Trial"
             sub="Then $29.99/mo · cancel any day before day 7."
             features={TRIAL_FEATURES}
             cta={{
               href: "/sign-in?mode=signup&plan=trial",
-              label: "Start Trial",
+              label: "Start Free Trial",
             }}
             highlight
-            priceFootnote="$1 for 7 days · auto-renews at $29.99/mo"
+            priceFootnote="7 days free · auto-renews at $29.99/mo"
           />
         </div>
       </section>
@@ -533,8 +533,9 @@ export default function LandingPage() {
             <p className="mx-auto max-w-xl text-sm text-zinc-400 sm:text-base">
               Every trader has spent a year stuck on the same mistakes because
               there was no one around to answer the question in the moment.
-              Trade Aligned ends that. Full curriculum free, AI Mentor a dollar
-              away, the entire database working for you the second you join.
+              Trade Aligned ends that. Full curriculum free, AI Mentor free
+              for 7 days, the entire database working for you the second you
+              join.
             </p>
             <div className="flex justify-center pt-2">
               <Link
@@ -769,9 +770,9 @@ function PriceCard({
       <div className="relative mt-8 flex items-center justify-between">
         <div>
           <div className="text-2xl font-bold text-white">
-            {highlight ? "$1" : "$0"}
+            {highlight ? "$0" : "$0"}
             <span className="ml-1 text-xs font-medium text-zinc-500">
-              {highlight ? "/ trial" : "/ forever"}
+              {highlight ? "/ 7 days" : "/ forever"}
             </span>
           </div>
           {priceFootnote && (

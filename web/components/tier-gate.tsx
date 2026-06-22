@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Wrap a page/view to lock it behind the $1 trial for free-tier accounts.
+ * Wrap a page/view to lock it behind the free trial for free-tier accounts.
  *
  * Free accounts see the children rendered (blurred + non-interactive) behind
  * a glassy paywall card. Trial/paid/admin users see the children normally.
@@ -69,15 +69,15 @@ export function TierGate({ feature, pitch, children }: TierGateProps) {
               </div>
               <div>
                 <h2 className="text-xl font-bold text-white">
-                  {feature} is part of the $1 trial.
+                  {feature} is part of the free trial.
                 </h2>
                 <p className="mt-1 text-sm leading-relaxed text-zinc-400">
                   {pitch}
                 </p>
               </div>
               <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-xs text-zinc-400">
-                <span className="font-semibold text-zinc-200">$1</span> for 7
-                days of full access, Mentor Chat, Library, Gems, Drill arcade,
+                <span className="font-semibold text-zinc-200">7 days free</span>
+                {" "}of full access — Trade AI, Library, Gems, Drill Arcade,
                 progress tracking. auto-renews at $29.99/mo unless you cancel.
               </div>
               <Link

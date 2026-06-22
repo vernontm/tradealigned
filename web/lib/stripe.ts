@@ -43,14 +43,15 @@ export type PlanConfig = {
 };
 
 export const PLANS: Record<RayAiPlanId, PlanConfig> = {
-  // $1 7-day trial → auto-renews into ray_ai monthly. Implemented as a
+  // Free 7-day trial → auto-renews into ray_ai monthly. Implemented as a
   // subscription to the standard $29.99/mo price with trial_period_days: 7
-  // plus a $1 setup invoice item billed today. See /api/stripe/checkout.
+  // and payment_method_collection: "always" so a card is captured upfront.
+  // See /api/stripe/checkout.
   trial: {
     id: "trial",
-    product_name: "Trade Aligned · $1 Trial",
+    product_name: "Trade Aligned · 7-Day Free Trial",
     product_description:
-      "$1 today for 7 days of full access. Auto-renews at $29.99/mo unless cancelled.",
+      "7 days of full access free. Auto-renews at $29.99/mo unless cancelled.",
     unit_amount_cents: 2999,
     recurring: "month",
     credits_per_period: 3000,

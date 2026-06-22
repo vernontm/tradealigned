@@ -20,8 +20,8 @@ async function sendWelcomeEmail(email: string, planId: RayAiPlanId) {
     ? "You're in. 7 days of full access, on us."
     : "Welcome to Trade Aligned.";
   const body = isTrial
-    ? `<p>Your $1 trial is live. For the next 7 days you have the full platform unlocked: AI Mentor, Drill Arcade, every gem, live trade calls, and weekly progress reports.</p>
-<p>On day 8 your card auto-renews at $29.99/mo. Cancel any time before then with one click from your billing page and you're never charged again.</p>
+    ? `<p>Your free trial is live. For the next 7 days you have the full platform unlocked: AI Mentor, Drill Arcade, every gem, live trade calls, and weekly progress reports.</p>
+<p>On day 8 your card auto-renews at $29.99/mo. Cancel any time before then with one click from your billing page and you're never charged.</p>
 <p>Start with the AI Mentor — drop a chart, ask anything, and watch it cite the exact lesson it learned from.</p>`
     : `<p>Your subscription is active. Every feature on the platform is now unlocked, AI Mentor, Drill Arcade, gems, live trade calls, weekly progress reports.</p>
 <p>Jump back in whenever you're ready.</p>`;
@@ -33,7 +33,7 @@ async function sendWelcomeEmail(email: string, planId: RayAiPlanId) {
       : "Welcome to Trade Aligned",
     html: brandedEmail({
       preheader: isTrial
-        ? "7 days of full access. Cancel anytime."
+        ? "7 days of full access, free. Cancel anytime."
         : "Your subscription is active.",
       heading,
       body,

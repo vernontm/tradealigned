@@ -71,33 +71,15 @@ export async function POST(req: Request) {
   const planCfg = PLANS[plan];
   const origin = new URL(req.url).origin;
 
-  // Trial plan is special: $1 today via add_invoice_items, 7-day Stripe
-  // trial, then auto-renews at the $29.99/mo price already on the line item.
-  // STRIPE_PRICE_TRIAL_SETUP must point at a $1 one-time price in Stripe.
+  // Trial plan: free 7-day Stripe trial on the $29.99/mo Ray AI price. Card
+  // is collected upfront via payment_method_collection: "always" so Stripe
+  // can auto-bill on day 8. No setup fee.
   const isTrial = plan === "trial";
-  const trialSetupPrice = process.env.STRIPE_PRICE_TRIAL_SETUP;
-  if (isTrial && !trialSetupPrice) {
-    return Response.json(
-      { error: "STRIPE_PRICE_TRIAL_SETUP env var missing (one-time $1 price)." },
-      { status: 500 }
-    );
-  }
-
-  // Trial mixes one-time + recurring line items so the $1 fee bills today
-  // and the $29.99/mo subscription begins after the 7-day trial. Stripe's
-  // Checkout supports this combo in subscription mode; add_invoice_items
-  // (the raw Subscriptions API approach) is rejected here.
-  const lineItems = isTrial
-    ? [
-        { price: priceId, quantity: 1 },
-        { price: trialSetupPrice!, quantity: 1 },
-      ]
-    : [{ price: priceId, quantity: 1 }];
 
   const session = await stripe.checkout.sessions.create({
     mode: planCfg.recurring ? "subscription" : "payment",
     customer: customerId,
-    line_items: lineItems,
+    line_items: [{ price: priceId, quantity: 1 }],
     success_url: `${origin}/account?checkout=success&plan=${plan}`,
     cancel_url: `${origin}/pricing?checkout=cancelled`,
     allow_promotion_codes: true,
