@@ -431,15 +431,15 @@ export function ChatPane({ onToolResult }: Props) {
                 You&apos;re out of credits.
               </div>
               <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
-                Start your 7-day free trial to keep chatting with Trade AI —
-                3,000 credits each month, no charge today.
+                Start your $1 trial to keep chatting with Trade AI —
+                3,000 credits each month, just $1 for the first 7 days.
               </p>
             </div>
             <Link
               href="/pricing"
               className="inline-flex shrink-0 items-center gap-1 rounded-xl bg-gradient-to-br from-emerald-500 via-teal-600 to-cyan-600 px-3 py-1.5 text-xs font-bold text-white shadow shadow-emerald-500/40 transition hover:opacity-90"
             >
-              Start Free Trial →
+              Start $1 Trial →
             </Link>
           </div>
         </div>

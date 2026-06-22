@@ -146,7 +146,7 @@ export function PricingView() {
 
                   <div className="flex items-baseline gap-1.5">
                     <span className="bg-gradient-to-br from-emerald-300 to-teal-400 bg-clip-text text-5xl font-bold text-transparent">
-                      $0
+                      $1
                     </span>
                     <span className="text-sm font-medium text-zinc-500">
                       for 7 days
@@ -186,7 +186,7 @@ export function PricingView() {
                       ) : (
                         <>
                           <Zap className="h-4 w-4" strokeWidth={2.5} />
-                          Start 7-Day Free Trial
+                          Start $1 Trial
                         </>
                       )}
                     </span>

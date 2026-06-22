@@ -40,9 +40,9 @@ const FREE_FEATURES: Feature[] = [
   },
 ];
 
-// 7-day free trial of the $29.99/mo plan. Card collected upfront via
-// payment_method_collection: "always" so Stripe can auto-bill on day 8.
-// Cancel before day 7 → never charged. See /api/stripe/checkout.
+// $1 for 7 days, then auto-renews into the $29.99/mo plan. The $1 is a
+// one-time charge today + a 7-day Stripe trial on the recurring price.
+// Cancel before day 7 → never charged past the $1. See /api/stripe/checkout.
 const TRIAL_FEATURES: Feature[] = [
   { label: "Everything in Free" },
   {
@@ -83,7 +83,7 @@ const FAQS = [
   },
   {
     q: "What happens after the 7-day trial?",
-    a: "Your card on file is charged $29.99 on day 8 and you stay on the monthly plan. If you cancel any time before day 7, you're never charged a cent. There's a one-click cancel button in your account, no email, no support ticket.",
+    a: "You pay $1 today for 7 days of full access. On day 8 your card is charged $29.99 and you stay on the monthly plan. Cancel any time before day 7 and you're never charged past the $1. There's a one-click cancel button in your account, no email, no support ticket.",
   },
   {
     q: "Is this for prop firm or funded traders?",
@@ -490,10 +490,10 @@ export default function LandingPage() {
           </div>
           <h2 className="mt-2 text-3xl font-bold text-white sm:text-4xl">
             Start free. <br className="hidden sm:block" />
-            7 days of full access on us.
+            Unlock everything for $1.
           </h2>
           <p className="mt-3 text-sm text-zinc-400 sm:text-base">
-            7-day free trial of the full platform. after that it auto-renews
+            $1 gets you 7 days of full access. after that it auto-renews
             at $29.99/mo unless you cancel.
           </p>
         </div>
@@ -507,15 +507,15 @@ export default function LandingPage() {
           />
           <PriceCard
             tag="Most Popular"
-            tier="Free Trial"
+            tier="$1 Trial"
             sub="Then $29.99/mo · cancel any day before day 7."
             features={TRIAL_FEATURES}
             cta={{
               href: "/sign-in?mode=signup&plan=trial",
-              label: "Start Free Trial",
+              label: "Start $1 Trial",
             }}
             highlight
-            priceFootnote="7 days free · auto-renews at $29.99/mo"
+            priceFootnote="$1 for 7 days · then $29.99/mo"
           />
         </div>
       </section>
@@ -533,8 +533,8 @@ export default function LandingPage() {
             <p className="mx-auto max-w-xl text-sm text-zinc-400 sm:text-base">
               Every trader has spent a year stuck on the same mistakes because
               there was no one around to answer the question in the moment.
-              Ray AI ends that. Full curriculum free, AI Mentor free
-              for 7 days, the entire database working for you the second you
+              Ray AI ends that. Full curriculum free, AI Mentor $1 for
+              7 days, the entire database working for you the second you
               join.
             </p>
             <div className="flex justify-center pt-2">
@@ -770,9 +770,9 @@ function PriceCard({
       <div className="relative mt-8 flex items-center justify-between">
         <div>
           <div className="text-2xl font-bold text-white">
-            {highlight ? "$0" : "$0"}
+            {highlight ? "$1" : "$0"}
             <span className="ml-1 text-xs font-medium text-zinc-500">
-              {highlight ? "/ 7 days" : "/ forever"}
+              {highlight ? "for 7 days" : "/ forever"}
             </span>
           </div>
           {priceFootnote && (

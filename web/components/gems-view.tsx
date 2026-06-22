@@ -652,14 +652,14 @@ function UpgradeCta({ count }: { count: number }) {
         </h3>
         <p className="mx-auto max-w-md text-sm leading-relaxed text-zinc-400">
           Every clipped teaching moment from 1,000+ hours of live trading,
-          searchable, timestamped, ready when you need it. 7 days free.
+          searchable, timestamped, ready when you need it. $1 for 7 days.
         </p>
         <div className="pt-1">
           <Link
             href="/pricing"
             className="inline-flex items-center gap-1.5 rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-600 to-cyan-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/40 transition hover:shadow-xl hover:shadow-emerald-500/50"
           >
-            Start Free Trial
+            Start $1 Trial
           </Link>
         </div>
       </div>

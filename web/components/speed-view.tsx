@@ -99,7 +99,7 @@ export function SpeedView() {
     if (!outcome.ok) {
       if (outcome.reason === "insufficient") {
         alert(
-          "out of credits — start your 7-day free trial from the pricing page to keep going."
+          "out of credits — start your $1 trial from the pricing page to keep going."
         );
       }
       return;

@@ -130,7 +130,7 @@ function AuthForm() {
       ? "welcome back"
       : mode === "signup"
       ? isTrialFlow
-        ? "start your free trial"
+        ? "start your $1 trial"
         : "create your account"
       : "reset your password";
 
