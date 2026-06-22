@@ -522,8 +522,10 @@ function MessageBubble({ m }: { m: UIMessage }) {
     .filter((p) => p.type === "text")
     .map((p) => (p as { type: "text"; text: string }).text)
     .join("");
+  // AI SDK types attachments as "file"; the "image" branch is kept for
+  // backwards compatibility with older messages persisted to localStorage.
   const imageParts = (m.parts ?? []).filter(
-    (p) => p.type === "file" || p.type === "image"
+    (p) => p.type === "file" || (p as { type: string }).type === "image"
   ) as Array<{
     type: "file" | "image";
     url?: string;

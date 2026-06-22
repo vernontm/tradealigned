@@ -28,7 +28,7 @@ type GemRow = {
   video_id: string | null;
   pinned_from_trade_id: string | null;
   created_at: string;
-  videos?: { video_date: string | null; filename?: string } | null;
+  videos?: { video_date: string | null; filename?: string }[] | null;
 };
 
 type ListResponse = {
@@ -191,7 +191,8 @@ function GemCard({
 
   const img = toMediaUrl(gem.frame_path);
   const clip = toMediaUrl(gem.clip_path);
-  const date = gem.videos?.video_date;
+  // Supabase types 1:1 joins as arrays — see GemRow comment in /api/gems.
+  const date = gem.videos?.[0]?.video_date;
 
   // Auto-run find-clip on mount if this gem doesn't have one yet.
   // The user can still trigger manually via the button, this just removes the friction.

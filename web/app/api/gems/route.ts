@@ -56,7 +56,9 @@ type GemRow = {
   video_id: string | null;
   pinned_from_trade_id: string | null;
   created_at: string;
-  videos?: { video_date: string | null; filename?: string } | null;
+  // Supabase types one-to-many joins as arrays even when the FK is 1:1, so
+  // consumers must read videos[0]. flatVideo() in auto-clip normalises this.
+  videos?: { video_date: string | null; filename?: string }[] | null;
 };
 
 export async function GET(req: Request) {

@@ -6,9 +6,12 @@ if (!process.env.STRIPE_SECRET_KEY) {
 }
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  // Pin to a known API version
-  apiVersion: "2025-09-30.clover" as Stripe.LatestApiVersion,
-  appInfo: { name: "Ray AI by TGFX", version: "0.1.0" },
+  // The Stripe SDK's typed API version literal narrows with every release; we
+  // pin a known-good version and cast to keep the build stable across SDK
+  // upgrades.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  apiVersion: "2025-09-30.clover" as any,
+  appInfo: { name: "Trade Aligned by TGFX Academy", version: "0.1.0" },
 });
 
 export type RayAiPlanId =

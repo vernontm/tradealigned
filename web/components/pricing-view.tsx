@@ -20,6 +20,7 @@ const TOPUPS = [
     blurb: "great for a focused review week.",
     perCredit: "0.5¢ / credit",
     accent: "from-emerald-500 to-teal-600",
+    highlighted: false,
   },
   {
     id: "topup_5k",
