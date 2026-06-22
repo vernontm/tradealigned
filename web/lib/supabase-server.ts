@@ -63,11 +63,33 @@ export async function getCurrentAppUser() {
   const user = await getCurrentUser();
   if (!user) return null;
   const sb = await createSupabaseServer();
-  const { data } = await sb
+
+  let { data } = await sb
     .from("app_users")
     .select("id, email, role, tier, auth_user_id")
     .eq("auth_user_id", user.id)
     .maybeSingle();
+
+  // First touch: a Supabase Auth user exists but has no internal app_users
+  // row yet (happens when someone signs up via the standard form and hasn't
+  // gone through Stripe checkout, which is the other place rows get
+  // created). Auto-insert with default tier='free' so every authenticated
+  // user is queryable by app id from here forward. This is what unblocked
+  // chat + drills returning 401 even for signed-in accounts.
+  if (!data && user.email) {
+    const { supabase: serviceClient } = await import("./supabase");
+    const ins = await serviceClient
+      .from("app_users")
+      .insert({
+        email: user.email,
+        auth_user_id: user.id,
+        tier: "free",
+      })
+      .select("id, email, role, tier, auth_user_id")
+      .single();
+    if (ins.data) data = ins.data;
+  }
+
   if (!data) return null;
   const { getViewAsCookie } = await import("./view-as-server");
   const viewAs = await getViewAsCookie();
