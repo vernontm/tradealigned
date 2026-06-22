@@ -11,8 +11,11 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import { CandleChart } from "./candle-chart";
 import { generateScenario, type Scenario } from "@/lib/candle-gen";
+import { CREDIT_COSTS } from "@/lib/credit-costs";
 import { recordAttempt } from "@/lib/progress";
 import { broadcastBalance } from "@/lib/use-credit-balance";
+
+const ROUND_COST = CREDIT_COSTS.drill_replay;
 
 type Stats = { correct: number; total: number; streak: number };
 
@@ -94,9 +97,13 @@ export function ReplayView() {
           <button
             type="button"
             onClick={start}
-            className="rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-md transition hover:opacity-90"
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-md transition hover:opacity-90"
           >
-            start replay session →
+            start replay session
+            <span className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-semibold">
+              {ROUND_COST} credits
+            </span>
+            →
           </button>
         </div>
       </div>
@@ -193,6 +200,9 @@ export function ReplayView() {
               >
                 <RotateCw className="h-4 w-4" />
                 next chart
+                <span className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-semibold">
+                  {ROUND_COST} credits
+                </span>
               </button>
             </div>
           )}

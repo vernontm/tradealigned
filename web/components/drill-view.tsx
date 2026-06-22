@@ -3,7 +3,10 @@
 import { CheckCircle2, Loader2, RotateCw, XCircle } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { recordAttempt } from "@/lib/progress";
+import { CREDIT_COSTS } from "@/lib/credit-costs";
 import { broadcastBalance } from "@/lib/use-credit-balance";
+
+const QUESTION_COST = CREDIT_COSTS.drill_question;
 
 type Question = {
   id: string;
@@ -97,9 +100,13 @@ export function DrillView() {
           <button
             type="button"
             onClick={start}
-            className="rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 px-5 py-3 text-sm font-semibold text-white shadow-md transition hover:opacity-90"
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 px-5 py-3 text-sm font-semibold text-white shadow-md transition hover:opacity-90"
           >
-            start a session →
+            start a session
+            <span className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-semibold">
+              {QUESTION_COST} credits
+            </span>
+            →
           </button>
         </div>
       </div>
@@ -230,6 +237,9 @@ export function DrillView() {
               >
                 <RotateCw className="h-4 w-4" />
                 next question
+                <span className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-semibold">
+                  {QUESTION_COST} credits
+                </span>
               </button>
             </div>
           )}

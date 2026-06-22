@@ -12,9 +12,10 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { UIMessage } from "ai";
-import { charge } from "@/lib/credits";
+import { CREDIT_COSTS } from "@/lib/credit-costs";
 import {
   deleteSession,
   getActiveId,
@@ -25,7 +26,7 @@ import {
   saveSession,
   setActiveId,
 } from "@/lib/chat-history";
-import { useCreditBalance } from "@/lib/use-credit-balance";
+import { broadcastBalance, useCreditBalance } from "@/lib/use-credit-balance";
 
 type Props = {
   onToolResult: (toolName: string, result: unknown) => void;
@@ -81,13 +82,32 @@ export function ChatPane({ onToolResult }: Props) {
   }, [sessionId]);
 
   const { refresh: refreshCredits } = useCreditBalance();
+  const [outOfCredits, setOutOfCredits] = useState(false);
 
   const { messages, sendMessage, status, setMessages } = useChat({
     transport: new DefaultChatTransport({ api: "/api/chat" }),
     onFinish: () => {
       // Each completed turn just spent credits server-side — refresh the
       // sidebar pill so the new total appears without a page reload.
+      setOutOfCredits(false);
       refreshCredits();
+    },
+    onError: (err) => {
+      // /api/chat surfaces 402 as Error("<json body>"). Sniff for the
+      // structured insufficient_credits shape and switch the UI into an
+      // upgrade-prompt state instead of a generic red error toast.
+      try {
+        const parsed = JSON.parse(err?.message ?? "");
+        if (parsed?.error === "insufficient_credits") {
+          if (typeof parsed.balance === "number") {
+            broadcastBalance(parsed.balance);
+          }
+          setOutOfCredits(true);
+        }
+      } catch {
+        // Not a structured error — let the AI SDK's default error state
+        // render in place.
+      }
     },
   });
 
@@ -257,14 +277,8 @@ export function ChatPane({ onToolResult }: Props) {
     const text = input.trim();
     if ((!text && !attachment) || status !== "ready") return;
 
-    // Charge credits, chart attachments use the "roast" rate
-    const result = charge(attachment ? "chart_roast" : "chat");
-    if (!result.ok) {
-      alert(
-        `not enough credits, you need ${result.cost} but only have ${result.newBalance}. top up from the pricing page.`
-      );
-      return;
-    }
+    // No client-side debit — the /api/chat handler charges authoritatively
+    // and surfaces a 402 via onError if the user can't afford the turn.
 
     const parts: Array<
       | { type: "text"; text: string }
@@ -406,6 +420,30 @@ export function ChatPane({ onToolResult }: Props) {
         <div ref={endRef} />
       </div>
 
+      {/* Out-of-credits banner — replaces the generic AI SDK error toast so
+          the user lands on a clear upgrade path instead of a red wall. */}
+      {outOfCredits && (
+        <div className="shrink-0 border-t border-emerald-400/30 bg-gradient-to-br from-emerald-500/10 via-zinc-900 to-zinc-950 px-4 py-3">
+          <div className="mx-auto flex max-w-3xl items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-emerald-200">
+                You&apos;re out of credits.
+              </div>
+              <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
+                Start your 7-day free trial to keep chatting with Trade AI —
+                3,000 credits each month, no charge today.
+              </p>
+            </div>
+            <Link
+              href="/pricing"
+              className="inline-flex shrink-0 items-center gap-1 rounded-xl bg-gradient-to-br from-emerald-500 via-teal-600 to-cyan-600 px-3 py-1.5 text-xs font-bold text-white shadow shadow-emerald-500/40 transition hover:opacity-90"
+            >
+              Start Free Trial →
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Composer, sticky bottom */}
       <form
         onSubmit={submit}
@@ -513,12 +551,22 @@ export function ChatPane({ onToolResult }: Props) {
           <button
             type="submit"
             disabled={
-              status !== "ready" || (!input.trim() && !attachment)
+              status !== "ready" || (!input.trim() && !attachment) || outOfCredits
             }
             className="rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 px-3.5 py-2.5 text-white shadow transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Send className="h-4 w-4" />
           </button>
+        </div>
+        <div className="mt-1.5 flex items-center justify-between gap-2 text-[10px] text-zinc-500">
+          <span>
+            {attachment
+              ? `chart upload · ${CREDIT_COSTS.chart_roast} credits / send`
+              : `text · ${CREDIT_COSTS.chat} credits / send`}
+          </span>
+          <span className="text-zinc-600">
+            attach a chart for vision analysis
+          </span>
         </div>
       </form>
     </div>
