@@ -89,3 +89,24 @@ export async function chargeCredits(
   if (error) throw error;
   return { ok: true, charged: cost, balance: balance - cost };
 }
+
+/**
+ * Refund credits for an action that was charged but couldn't be delivered
+ * (e.g. the AI provider was down). Writes a positive 'refund' ledger row so
+ * the student isn't billed for a failed request. Best-effort.
+ */
+export async function refundCredits(
+  appUserId: string,
+  action: CreditAction,
+  metadata?: Record<string, unknown>
+): Promise<void> {
+  const amount = CREDIT_COSTS[action];
+  if (!amount) return;
+  await supabase.from("credit_ledger").insert({
+    user_id: appUserId,
+    kind: "refund" as LedgerKind,
+    amount,
+    reason: `refund:${action}`,
+    metadata: metadata ?? null,
+  });
+}

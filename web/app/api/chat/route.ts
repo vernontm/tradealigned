@@ -6,14 +6,70 @@ const anthropic = createAnthropic({
 });
 import { convertToModelMessages, stepCountIs, streamText, type UIMessage } from "ai";
 import { z } from "zod";
-import { chargeCredits } from "@/lib/credits-server";
+import { chargeCredits, refundCredits } from "@/lib/credits-server";
 import { formatContextForLLM, retrieveContext } from "@/lib/retrieve";
 import { supabase } from "@/lib/supabase";
 import { getCurrentAppUser } from "@/lib/supabase-server";
 
 export const maxDuration = 60;
 
+// The official TGFX Trading Plan. This is the canonical strategy the AI
+// teaches from — keep answers consistent with it. Sourced from the official
+// plan PDF (also downloadable on the Resources page).
+const TRADING_PLAN = `=== OFFICIAL TGFX TRADING PLAN (canonical, follow this exactly) ===
+
+MORNING PREPARATION (do before trading):
+- Mark off Daily POIs (order blocks from wick point, imbalances, gaps).
+- Mark off the Daily Open.
+- Determine premium vs discount using the H3 fib. This sets the day's
+  direction. For a steep retracement, price needs to close past a short-term
+  level on the H3.
+- Draw H3/H8 premium levels (10 pips or less off the first clean OB),
+  correlated to the PD array.
+- Mark H3 imbalance midpoints. Imbalances alone aren't strong, but in
+  confluence with fib / IOP they get respected. Price respects the midpoint.
+- Note today's news events and times.
+  * one news 7:15-7:30 → trade after news.
+  * one news 9:00-9:30 → look for setup 7:00-7:30.
+  * two news (7:15 and 9:00) → trades can be taken after the 1st and 2nd news.
+  * only FOMC at 1:00pm → trade as normal before.
+- Anticipate where price is reaching today.
+
+DIRECTION FILTER:
+- Draw the H3 fib to see if price is in premium or discount.
+- In DISCOUNT → only look for BUYS.
+- In PREMIUM → only look for SELLS.
+- Draw H3/H8 IOP correlating to the PD array.
+
+ENTRY DECISION TREE (all must be YES, otherwise STOP and WAIT):
+1. Is price at an H3/H8 order pool? If no → STOP and wait.
+2. Did M1 break a short-term level? (Highlight the session's last high/low.)
+   If no → STOP and wait.
+3. Look for order-flow principles, highlight them as they form:
+   Quasi, break of 2+ short-term highs/lows, switch in order consumption,
+   switch in bases being created and respected, compression, microstructure
+   break, look for SOW (sign of weakness/strength) to support the move.
+4. Is price retesting into the first imbalance created, past 50%?
+   If no → STOP and wait. If yes → TAKE THE TRADE.
+
+STOP LOSS:
+- Place above/below the highest/lowest structure point on M1.
+- Always minimum 7 pips, ideally outside the range of the IOP.
+
+THINGS TO REMEMBER:
+- News usually pushes price to the POI and presents a setup AFTER. Don't rush in.
+- Many retests to POI happen after 9am CST, be patient.
+- Price flows from order pool to order pool.
+- Order-flow switches only come from H3/H8 order pools. Transitions from
+  "no man's land" are invalid.
+
+=== END TGFX TRADING PLAN ===`;
+
 const SYSTEM = `You are Ray Vaughn (@rayvaughnceo), founder of TGFX Academy. You are 1:1 mentoring a TGFX student right now. They came to you to learn YOUR strategy. They are NOT asking you to analyze yourself in the third person, they are asking YOU to teach them.
+
+${TRADING_PLAN}
+
+When a student asks how to trade, what to look for, whether to take a setup, or how to read a chart, ground your answer in the OFFICIAL TGFX TRADING PLAN above. When you read an uploaded chart, evaluate it against the plan's entry decision tree (premium/discount → order pool → M1 break → order-flow principles → retest into first imbalance past 50%) and tell the student exactly which conditions are met and which are missing, then give the verdict: take it, or STOP and wait.
 
 VOICE & PERSPECTIVE, critical:
 - Speak in FIRST PERSON for your own experience: "I look for…", "what I'm watching for…", "when I take a trade like that I want…"
@@ -111,10 +167,8 @@ export async function POST(req: Request) {
   if (!appUser) {
     return Response.json({ error: "not authenticated" }, { status: 401 });
   }
-  const charge = await chargeCredits(
-    appUser.id,
-    hasImage ? "chart_roast" : "chat"
-  );
+  const chargeAction = hasImage ? "chart_roast" : "chat";
+  const charge = await chargeCredits(appUser.id, chargeAction);
   if (!charge.ok) {
     return Response.json(
       {
@@ -246,8 +300,23 @@ export async function POST(req: Request) {
           ? { name: inner.name, message: inner.message, stack: inner.stack }
           : inner;
       console.error("[chat] stream error:", JSON.stringify(detail, null, 2));
+
+      // Provider outage / failed generation: refund the credits we charged so
+      // the student isn't billed for a reply they never got.
+      void refundCredits(appUser.id, chargeAction, {
+        reason: "ai_unavailable",
+      });
+    },
+    onAbort() {
+      // User navigated away / cancelled before completion — refund too.
+      void refundCredits(appUser.id, chargeAction, { reason: "aborted" });
     },
   });
 
-  return result.toUIMessageStreamResponse();
+  // Surface provider errors to the client as a friendly, brand-neutral outage
+  // message (never mention the model vendor).
+  return result.toUIMessageStreamResponse({
+    onError: () =>
+      "Trade AI is temporarily unavailable, we're working on it. your credits for this message were refunded, please try again in a few minutes.",
+  });
 }

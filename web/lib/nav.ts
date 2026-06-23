@@ -5,6 +5,7 @@
 import {
   BookOpen,
   CreditCard,
+  FileText,
   Gem,
   GraduationCap,
   MessageSquare,
@@ -27,6 +28,7 @@ export const NAV: NavItem[] = [
   { href: "/library", label: "Library", icon: BookOpen },
   { href: "/drill", label: "Daily Drill", icon: Sparkles },
   { href: "/gems", label: "Gems", icon: Gem },
+  { href: "/resources", label: "Resources", icon: FileText },
   { href: "/progress", label: "My Progress", icon: Trophy },
   { href: "/community", label: "Community", icon: Users },
   { href: "/billing", label: "Billing", icon: CreditCard },

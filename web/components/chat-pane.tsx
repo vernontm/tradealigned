@@ -85,6 +85,7 @@ export function ChatPane({ onToolResult }: Props) {
 
   const { refresh: refreshCredits } = useCreditBalance();
   const [outOfCredits, setOutOfCredits] = useState(false);
+  const [outage, setOutage] = useState(false);
 
   const { messages, sendMessage, status, setMessages } = useChat({
     transport: new DefaultChatTransport({ api: "/api/chat" }),
@@ -105,11 +106,16 @@ export function ChatPane({ onToolResult }: Props) {
             broadcastBalance(parsed.balance);
           }
           setOutOfCredits(true);
+          return;
         }
       } catch {
-        // Not a structured error — let the AI SDK's default error state
-        // render in place.
+        // not a structured credit error
       }
+      // Any other failure = provider outage / generation error. Show the
+      // friendly, brand-neutral outage banner and refresh the (refunded)
+      // balance.
+      setOutage(true);
+      refreshCredits();
     },
   });
 
@@ -278,6 +284,9 @@ export function ChatPane({ onToolResult }: Props) {
     e?.preventDefault();
     const text = input.trim();
     if ((!text && !attachment) || status !== "ready") return;
+
+    // Clear any prior outage banner on a fresh attempt.
+    setOutage(false);
 
     // No client-side debit — the /api/chat handler charges authoritatively
     // and surfaces a 402 via onError if the user can't afford the turn.
@@ -454,6 +463,23 @@ export function ChatPane({ onToolResult }: Props) {
             >
               Start $1 Trial →
             </Link>
+          </div>
+        </div>
+      )}
+
+      {/* Outage banner — brand-neutral, shown when the AI provider errors.
+          Credits for the failed message were already refunded server-side. */}
+      {outage && !outOfCredits && (
+        <div className="shrink-0 border-t border-amber-400/30 bg-gradient-to-br from-amber-500/10 via-zinc-900 to-zinc-950 px-4 py-3">
+          <div className="mx-auto max-w-3xl">
+            <div className="text-sm font-semibold text-amber-200">
+              Trade AI is temporarily unavailable
+            </div>
+            <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
+              We&apos;re experiencing a brief outage and working to fix it as
+              fast as possible. Your credits for that message were refunded —
+              please try again in a few minutes.
+            </p>
           </div>
         </div>
       )}
