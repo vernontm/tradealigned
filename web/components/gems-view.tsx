@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
+import { logEvent } from "@/lib/log-event";
 import { useCurrentUser, useHasPaidAccess } from "@/lib/use-current-user";
 
 // Free accounts can preview a small handful of gems unblurred. Items beyond
@@ -132,6 +133,17 @@ export function GemsView() {
     const t = setTimeout(loadFirstPage, search ? 250 : 0);
     return () => clearTimeout(t);
   }, [loadFirstPage, search]);
+
+  // Log a search event when the query settles (debounced), for admin analytics.
+  useEffect(() => {
+    const term = search.trim();
+    if (!term) return;
+    const t = setTimeout(
+      () => logEvent("search", { scope: "gems", q: term }),
+      800
+    );
+    return () => clearTimeout(t);
+  }, [search]);
 
   const load = loadFirstPage;
 
@@ -396,7 +408,10 @@ function GemCard({
           <ToggleBtn
             active={mode === "clip"}
             disabled={!clip}
-            onClick={() => setMode("clip")}
+            onClick={() => {
+              setMode("clip");
+              logEvent("gem_view", { gem_id: gem.id });
+            }}
             icon={<Play className="h-3 w-3" strokeWidth={2} />}
             label="clip"
           />

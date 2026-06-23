@@ -1,15 +1,23 @@
 "use client";
 
-import { ExternalLink, LogOut, ShieldCheck } from "lucide-react";
+import { ExternalLink, LayoutDashboard, LogOut, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 import { CreditsBadge } from "@/components/credits-badge";
+import { logEvent, logEventOncePerSession } from "@/lib/log-event";
 import { NAV } from "@/lib/nav";
 import { useCurrentUser } from "@/lib/use-current-user";
 
 export function Sidebar() {
   const pathname = usePathname();
   const { email, role } = useCurrentUser();
+
+  // Log one "login" event per browser session for any authenticated user.
+  // The sidebar mounts on every in-app page, so this fires on first load.
+  useEffect(() => {
+    if (email) logEventOncePerSession("login");
+  }, [email]);
   return (
     <aside className="hidden h-full w-60 shrink-0 flex-col rounded-2xl bg-zinc-950 px-3 py-4 text-zinc-200 shadow-xl md:flex">
       <Link href="/" className="px-3 pb-5">
@@ -61,17 +69,30 @@ export function Sidebar() {
         })}
 
         {role === "admin" && (
-          <Link
-            href="/admin"
-            className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm transition ${
-              pathname.startsWith("/admin")
-                ? "bg-gradient-to-br from-amber-500/20 to-orange-500/10 text-amber-200 ring-1 ring-amber-400/30"
-                : "text-amber-300/80 hover:bg-amber-500/10 hover:text-amber-200"
-            }`}
-          >
-            <ShieldCheck className="h-4 w-4 shrink-0" strokeWidth={1.75} />
-            <span className="flex-1 font-medium">Admin</span>
-          </Link>
+          <>
+            <Link
+              href="/admin/dashboard"
+              className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm transition ${
+                pathname.startsWith("/admin/dashboard")
+                  ? "bg-gradient-to-br from-amber-500/20 to-orange-500/10 text-amber-200 ring-1 ring-amber-400/30"
+                  : "text-amber-300/80 hover:bg-amber-500/10 hover:text-amber-200"
+              }`}
+            >
+              <LayoutDashboard className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+              <span className="flex-1 font-medium">Dashboard</span>
+            </Link>
+            <Link
+              href="/admin"
+              className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm transition ${
+                pathname === "/admin"
+                  ? "bg-gradient-to-br from-amber-500/20 to-orange-500/10 text-amber-200 ring-1 ring-amber-400/30"
+                  : "text-amber-300/80 hover:bg-amber-500/10 hover:text-amber-200"
+              }`}
+            >
+              <ShieldCheck className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+              <span className="flex-1 font-medium">Admin</span>
+            </Link>
+          </>
         )}
       </nav>
 
@@ -80,6 +101,7 @@ export function Sidebar() {
         href="https://plexytrade.com/?t=TBZp1B&term=register"
         target="_blank"
         rel="noopener noreferrer sponsored"
+        onClick={() => logEvent("ad_click", { sponsor: "plexytrade" })}
         className="mt-3 block overflow-hidden rounded-xl ring-1 ring-white/10 transition hover:ring-emerald-400/40"
         title="PlexyTrade · sponsor"
       >
