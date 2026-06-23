@@ -48,7 +48,12 @@ const POLL_MS = 20_000;
 
 type ActivityEvent = {
   type: "chat" | "search";
-  metadata: { query?: string; scope?: string; has_image?: boolean } | null;
+  metadata: {
+    query?: string;
+    response?: string;
+    scope?: string;
+    has_image?: boolean;
+  } | null;
   created_at: string;
 };
 
@@ -284,30 +289,41 @@ export function AdminDashboard() {
                           ) : activity && activity.length > 0 ? (
                             <ul className="mt-2 space-y-1.5">
                               {activity.map((e, i) => (
-                                <li
-                                  key={i}
-                                  className="flex items-start gap-2 text-xs"
-                                >
-                                  <span
-                                    className={`mt-0.5 shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${
-                                      e.type === "chat"
-                                        ? "bg-violet-500/15 text-violet-300"
-                                        : "bg-sky-500/15 text-sky-300"
-                                    }`}
-                                  >
-                                    {e.type === "chat" ? "chat" : e.metadata?.scope || "search"}
-                                  </span>
-                                  <span className="flex-1 text-zinc-300">
-                                    {e.metadata?.query || "—"}
-                                    {e.metadata?.has_image && (
-                                      <span className="ml-1 text-[10px] text-zinc-500">
-                                        📎 chart
+                                <li key={i} className="text-xs">
+                                  <div className="flex items-start gap-2">
+                                    <span
+                                      className={`mt-0.5 shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${
+                                        e.type === "chat"
+                                          ? "bg-violet-500/15 text-violet-300"
+                                          : "bg-sky-500/15 text-sky-300"
+                                      }`}
+                                    >
+                                      {e.type === "chat"
+                                        ? "asked"
+                                        : e.metadata?.scope || "search"}
+                                    </span>
+                                    <span className="flex-1 font-medium text-zinc-200">
+                                      {e.metadata?.query || "—"}
+                                      {e.metadata?.has_image && (
+                                        <span className="ml-1 text-[10px] text-zinc-500">
+                                          📎 chart
+                                        </span>
+                                      )}
+                                    </span>
+                                    <span className="shrink-0 text-[10px] text-zinc-600">
+                                      {fmtRelative(e.created_at)}
+                                    </span>
+                                  </div>
+                                  {e.type === "chat" && e.metadata?.response && (
+                                    <div className="ml-[3.25rem] mt-1 border-l-2 border-emerald-400/30 pl-2.5 text-[11px] leading-relaxed text-zinc-400">
+                                      <span className="text-[9px] font-bold uppercase text-emerald-400/70">
+                                        Trade AI:{" "}
                                       </span>
-                                    )}
-                                  </span>
-                                  <span className="shrink-0 text-[10px] text-zinc-600">
-                                    {fmtRelative(e.created_at)}
-                                  </span>
+                                      {e.metadata.response.length > 600
+                                        ? e.metadata.response.slice(0, 600) + "…"
+                                        : e.metadata.response}
+                                    </div>
+                                  )}
                                 </li>
                               ))}
                             </ul>

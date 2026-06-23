@@ -128,28 +128,14 @@ export async function POST(req: Request) {
     );
   }
 
-  // Log the actual chat query for admin analytics (what students ask Trade AI).
-  // Best-effort — never block the response on a logging failure.
-  try {
-    const queryForLog = (lastUser?.parts ?? [])
-      .filter((p) => p.type === "text")
-      .map((p) => (p as { type: "text"; text: string }).text)
-      .join(" ")
-      .trim()
-      .slice(0, 500);
-    if (queryForLog || hasImage) {
-      await supabase.from("activity_events").insert({
-        user_id: appUser.id,
-        type: "chat",
-        metadata: {
-          query: queryForLog || (hasImage ? "[chart upload]" : ""),
-          has_image: hasImage,
-        },
-      });
-    }
-  } catch {
-    // ignore logging errors
-  }
+  // Captured for the post-stream log (full Q+A pair) so admins can review
+  // conversations for training. Set here, written in streamText.onFinish.
+  const queryForLog = (lastUser?.parts ?? [])
+    .filter((p) => p.type === "text")
+    .map((p) => (p as { type: "text"; text: string }).text)
+    .join(" ")
+    .trim()
+    .slice(0, 1000);
 
   let contextText = "";
   if (lastUser) {
@@ -176,6 +162,23 @@ export async function POST(req: Request) {
       ? `${SYSTEM}\n\n--- RETRIEVED CONTEXT FOR CURRENT QUESTION ---\n${contextText}\n--- END CONTEXT ---`
       : SYSTEM,
     messages: converted,
+    // After the reply finishes, log the full Q+A pair for admin review +
+    // future training. Best-effort; never affects the user's stream.
+    onFinish: async ({ text }) => {
+      try {
+        await supabase.from("activity_events").insert({
+          user_id: appUser.id,
+          type: "chat",
+          metadata: {
+            query: queryForLog || (hasImage ? "[chart upload]" : ""),
+            response: (text ?? "").slice(0, 8000),
+            has_image: hasImage,
+          },
+        });
+      } catch {
+        // ignore logging errors
+      }
+    },
     tools: {
       showTrade: {
         description:
