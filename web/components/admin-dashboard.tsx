@@ -8,7 +8,7 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 
 type Kpis = {
   total_students: number;
@@ -46,11 +46,46 @@ type StatsResponse = {
 
 const POLL_MS = 20_000;
 
+type ActivityEvent = {
+  type: "chat" | "search";
+  metadata: { query?: string; scope?: string; has_image?: boolean } | null;
+  created_at: string;
+};
+
 export function AdminDashboard() {
   const [data, setData] = useState<StatsResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Expanded student row → their recent chat queries + searches.
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [activity, setActivity] = useState<ActivityEvent[] | null>(null);
+  const [activityLoading, setActivityLoading] = useState(false);
+
+  const toggleRow = useCallback(
+    async (id: string) => {
+      if (openId === id) {
+        setOpenId(null);
+        return;
+      }
+      setOpenId(id);
+      setActivity(null);
+      setActivityLoading(true);
+      try {
+        const r = await fetch(`/api/admin/student-activity?user_id=${id}`, {
+          cache: "no-store",
+        });
+        const j = await r.json();
+        setActivity((j.events as ActivityEvent[]) ?? []);
+      } catch {
+        setActivity([]);
+      } finally {
+        setActivityLoading(false);
+      }
+    },
+    [openId]
+  );
 
   const load = useCallback(async () => {
     try {
@@ -176,58 +211,115 @@ export function AdminDashboard() {
               </thead>
               <tbody>
                 {students.map((s) => (
-                  <tr
-                    key={s.id}
-                    className="border-b border-white/5 transition hover:bg-white/[0.03]"
-                  >
-                    <td className="px-4 py-2.5">
-                      <span className="font-medium text-zinc-100">
-                        {s.email}
-                      </span>
-                      {s.role === "admin" && (
-                        <span className="ml-1.5 rounded bg-amber-500/15 px-1 py-0.5 text-[9px] font-bold uppercase text-amber-300">
-                          admin
+                  <Fragment key={s.id}>
+                    <tr
+                      onClick={() => toggleRow(s.id)}
+                      className={`cursor-pointer border-b border-white/5 transition hover:bg-white/[0.03] ${
+                        openId === s.id ? "bg-white/[0.04]" : ""
+                      }`}
+                      title="click to see chat queries + searches"
+                    >
+                      <td className="px-4 py-2.5">
+                        <span className="font-medium text-zinc-100">
+                          {s.email}
                         </span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <TierPill tier={s.tier} />
-                    </td>
-                    <td className="px-3 py-2.5 text-zinc-400">
-                      {fmtDate(s.joined_at)}
-                    </td>
-                    <td className="px-3 py-2.5 text-zinc-400">
-                      {fmtRelative(s.last_active)}
-                    </td>
-                    <td className="px-3 py-2.5 text-right text-zinc-300">
-                      {s.logins}
-                    </td>
-                    <td className="px-3 py-2.5 text-right text-zinc-300">
-                      {s.lessons_completed}/{totalLessons}
-                      <span className="ml-1 text-[10px] text-zinc-500">
-                        ({Math.round((s.lessons_completed / totalLessons) * 100)}
-                        %)
-                      </span>
-                    </td>
-                    <td className="px-3 py-2.5 text-right text-zinc-300">
-                      {s.chat_count}
-                    </td>
-                    <td className="px-3 py-2.5 text-right text-zinc-300">
-                      {s.drills_played}
-                    </td>
-                    <td className="px-3 py-2.5 text-right text-zinc-300">
-                      {s.gem_views}
-                    </td>
-                    <td className="px-3 py-2.5 text-right text-zinc-300">
-                      {s.searches}
-                    </td>
-                    <td className="px-3 py-2.5 text-right text-zinc-300">
-                      {s.ad_clicks}
-                    </td>
-                    <td className="px-3 py-2.5 text-right text-zinc-300">
-                      {s.credit_balance}
-                    </td>
-                  </tr>
+                        {s.role === "admin" && (
+                          <span className="ml-1.5 rounded bg-amber-500/15 px-1 py-0.5 text-[9px] font-bold uppercase text-amber-300">
+                            admin
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <TierPill tier={s.tier} />
+                      </td>
+                      <td className="px-3 py-2.5 text-zinc-400">
+                        {fmtDate(s.joined_at)}
+                      </td>
+                      <td className="px-3 py-2.5 text-zinc-400">
+                        {fmtRelative(s.last_active)}
+                      </td>
+                      <td className="px-3 py-2.5 text-right text-zinc-300">
+                        {s.logins}
+                      </td>
+                      <td className="px-3 py-2.5 text-right text-zinc-300">
+                        {s.lessons_completed}/{totalLessons}
+                        <span className="ml-1 text-[10px] text-zinc-500">
+                          (
+                          {Math.round(
+                            (s.lessons_completed / totalLessons) * 100
+                          )}
+                          %)
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5 text-right text-zinc-300">
+                        {s.chat_count}
+                      </td>
+                      <td className="px-3 py-2.5 text-right text-zinc-300">
+                        {s.drills_played}
+                      </td>
+                      <td className="px-3 py-2.5 text-right text-zinc-300">
+                        {s.gem_views}
+                      </td>
+                      <td className="px-3 py-2.5 text-right text-zinc-300">
+                        {s.searches}
+                      </td>
+                      <td className="px-3 py-2.5 text-right text-zinc-300">
+                        {s.ad_clicks}
+                      </td>
+                      <td className="px-3 py-2.5 text-right text-zinc-300">
+                        {s.credit_balance}
+                      </td>
+                    </tr>
+                    {openId === s.id && (
+                      <tr className="border-b border-white/5 bg-zinc-950/40">
+                        <td colSpan={12} className="px-4 py-3">
+                          <div className="text-[10px] font-semibold uppercase tracking-wider text-emerald-300">
+                            recent chat queries + searches
+                          </div>
+                          {activityLoading ? (
+                            <div className="mt-2 flex items-center gap-2 text-xs text-zinc-500">
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                              loading…
+                            </div>
+                          ) : activity && activity.length > 0 ? (
+                            <ul className="mt-2 space-y-1.5">
+                              {activity.map((e, i) => (
+                                <li
+                                  key={i}
+                                  className="flex items-start gap-2 text-xs"
+                                >
+                                  <span
+                                    className={`mt-0.5 shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${
+                                      e.type === "chat"
+                                        ? "bg-violet-500/15 text-violet-300"
+                                        : "bg-sky-500/15 text-sky-300"
+                                    }`}
+                                  >
+                                    {e.type === "chat" ? "chat" : e.metadata?.scope || "search"}
+                                  </span>
+                                  <span className="flex-1 text-zinc-300">
+                                    {e.metadata?.query || "—"}
+                                    {e.metadata?.has_image && (
+                                      <span className="ml-1 text-[10px] text-zinc-500">
+                                        📎 chart
+                                      </span>
+                                    )}
+                                  </span>
+                                  <span className="shrink-0 text-[10px] text-zinc-600">
+                                    {fmtRelative(e.created_at)}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <div className="mt-2 text-xs text-zinc-600">
+                              no chat queries or searches logged yet.
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 ))}
                 {students.length === 0 && (
                   <tr>

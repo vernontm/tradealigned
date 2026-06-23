@@ -128,6 +128,29 @@ export async function POST(req: Request) {
     );
   }
 
+  // Log the actual chat query for admin analytics (what students ask Trade AI).
+  // Best-effort — never block the response on a logging failure.
+  try {
+    const queryForLog = (lastUser?.parts ?? [])
+      .filter((p) => p.type === "text")
+      .map((p) => (p as { type: "text"; text: string }).text)
+      .join(" ")
+      .trim()
+      .slice(0, 500);
+    if (queryForLog || hasImage) {
+      await supabase.from("activity_events").insert({
+        user_id: appUser.id,
+        type: "chat",
+        metadata: {
+          query: queryForLog || (hasImage ? "[chart upload]" : ""),
+          has_image: hasImage,
+        },
+      });
+    }
+  } catch {
+    // ignore logging errors
+  }
+
   let contextText = "";
   if (lastUser) {
     const queryText = lastUser.parts
