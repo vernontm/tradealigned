@@ -9,6 +9,7 @@ import {
   Paperclip,
   Plus,
   Send,
+  Sparkles,
   Trash2,
   X,
 } from "lucide-react";
@@ -415,9 +416,21 @@ export function ChatPane({ onToolResult }: Props) {
         {messages.map((m: UIMessage) => (
           <MessageBubble key={m.id} m={m} />
         ))}
-        {status === "streaming" && (
-          <div className="text-xs italic text-zinc-400">ray is reading…</div>
-        )}
+        {(() => {
+          // Show the thinking animation from the moment the request is sent
+          // (status "submitted") through streaming, until the assistant's
+          // reply actually has visible text. Avoids a frozen-feeling gap.
+          const last = messages[messages.length - 1];
+          const lastIsAssistantWithText =
+            last?.role === "assistant" &&
+            (last.parts ?? []).some(
+              (p) => p.type === "text" && (p as { text?: string }).text?.trim()
+            );
+          const thinking =
+            (status === "submitted" || status === "streaming") &&
+            !lastIsAssistantWithText;
+          return thinking ? <ThinkingBubble /> : null;
+        })()}
         <div ref={endRef} />
       </div>
 
@@ -570,6 +583,24 @@ export function ChatPane({ onToolResult }: Props) {
           </span>
         </div>
       </form>
+    </div>
+  );
+}
+
+function ThinkingBubble() {
+  return (
+    <div className="flex items-start gap-2">
+      <div className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 shadow shadow-emerald-500/40">
+        <Sparkles className="h-3 w-3 text-white" strokeWidth={2.5} />
+      </div>
+      <div className="flex items-center gap-2 rounded-2xl rounded-bl-md border border-white/10 bg-zinc-900/60 px-3.5 py-2.5 shadow-sm">
+        <span className="flex items-center gap-1">
+          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-emerald-300 [animation-delay:0ms]" />
+          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-emerald-300 [animation-delay:150ms]" />
+          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-emerald-300 [animation-delay:300ms]" />
+        </span>
+        <span className="text-xs text-zinc-400">Trade AI is thinking…</span>
+      </div>
     </div>
   );
 }
