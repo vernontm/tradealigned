@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { CreditsBadge } from "@/components/credits-badge";
+import { OnlineBadge } from "@/components/online-badge";
 import { logEvent, logEventOncePerSession } from "@/lib/log-event";
 import { NAV } from "@/lib/nav";
 import { useCurrentUser } from "@/lib/use-current-user";
@@ -20,7 +21,7 @@ export function Sidebar() {
   }, [email]);
   return (
     <aside className="hidden h-full w-60 shrink-0 flex-col rounded-2xl bg-zinc-950 px-3 py-4 text-zinc-200 shadow-xl md:flex">
-      <Link href="/" className="px-3 pb-5">
+      <Link href="/" className="px-3 pb-3">
         <div className="text-[10px] uppercase tracking-[0.18em] text-zinc-500">
           TGFX Academy
         </div>
@@ -29,6 +30,12 @@ export function Sidebar() {
           <div className="text-base font-semibold text-white">Ray AI</div>
         </div>
       </Link>
+
+      {email && (
+        <div className="px-3 pb-4">
+          <OnlineBadge />
+        </div>
+      )}
 
       <nav className="flex-1 space-y-1">
         {NAV.map((item) => {
