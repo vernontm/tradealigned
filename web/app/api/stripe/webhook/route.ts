@@ -47,7 +47,8 @@ async function grantSubscription(
   appUserId: string,
   planId: RayAiPlanId,
   subscriptionId: string,
-  periodEndsAt: Date | null
+  periodEndsAt: Date | null,
+  status?: string
 ) {
   const plan = PLANS[planId];
   if (!plan.tier) return;
@@ -58,6 +59,7 @@ async function grantSubscription(
       stripe_subscription_id: subscriptionId,
       current_period_ends_at: periodEndsAt?.toISOString() ?? null,
       paid_started_at: new Date().toISOString(),
+      subscription_status: status ?? null,
     })
     .eq("id", appUserId);
 
@@ -154,7 +156,13 @@ export async function POST(req: Request) {
           const periodEnd = item?.current_period_end
             ? new Date(item.current_period_end * 1000)
             : null;
-          await grantSubscription(appUserId, planId, sub.id, periodEnd);
+          await grantSubscription(
+            appUserId,
+            planId,
+            sub.id,
+            periodEnd,
+            sub.status
+          );
 
           // Welcome email. Wrapped so a Resend hiccup never makes us 5xx the
           // webhook (Stripe would retry and grantSubscription would re-run).
@@ -197,6 +205,7 @@ export async function POST(req: Request) {
             tier: active && planId ? (PLANS[planId].tier ?? "free") : "free",
             current_period_ends_at: periodEnd?.toISOString() ?? null,
             stripe_subscription_id: active ? sub.id : null,
+            subscription_status: active ? sub.status : "canceled",
           })
           .eq("id", appUserId);
         break;

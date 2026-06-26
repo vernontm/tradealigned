@@ -58,6 +58,23 @@ export async function GET() {
     return Response.json({ error: error.message }, { status: 500 });
   }
 
+  // Revenue math. Monthly plan is $29.99. "active" subscriptions are billing
+  // now (real MRR); "trialing" haven't paid the $29.99 yet (pending MRR once
+  // their trial converts). past_due is counted as at-risk MRR.
+  const MONTHLY_PRICE = 2999; // cents
+  const rows = students ?? [];
+  const activePaying = rows.filter(
+    (s) => s.subscription_status === "active"
+  ).length;
+  const trialing = rows.filter(
+    (s) => s.subscription_status === "trialing"
+  ).length;
+  const pastDue = rows.filter(
+    (s) => s.subscription_status === "past_due"
+  ).length;
+  const mrrCents = activePaying * MONTHLY_PRICE;
+  const pendingMrrCents = trialing * MONTHLY_PRICE;
+
   return Response.json({
     generated_at: new Date().toISOString(),
     kpis: {
@@ -69,7 +86,14 @@ export async function GET() {
       chat_messages: chatTotal.count ?? 0,
       drills_played: drillTotal.count ?? 0,
       ad_clicks: adClicks.count ?? 0,
+      // billing
+      mrr: mrrCents / 100,
+      arr: (mrrCents * 12) / 100,
+      pending_mrr: pendingMrrCents / 100,
+      active_paying: activePaying,
+      trialing,
+      past_due: pastDue,
     },
-    students: students ?? [],
+    students: rows,
   });
 }

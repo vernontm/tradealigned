@@ -1,10 +1,13 @@
 "use client";
 
 import {
+  DollarSign,
+  Hourglass,
   Loader2,
   MessageSquare,
   Search,
   Target,
+  TrendingUp,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -19,6 +22,12 @@ type Kpis = {
   chat_messages: number;
   drills_played: number;
   ad_clicks: number;
+  mrr: number;
+  arr: number;
+  pending_mrr: number;
+  active_paying: number;
+  trialing: number;
+  past_due: number;
 };
 
 type Student = {
@@ -27,6 +36,8 @@ type Student = {
   tier: string;
   role: string;
   joined_at: string;
+  subscription_status: string | null;
+  current_period_ends_at: string | null;
   logins: number;
   last_active: string;
   chat_count: number;
@@ -139,7 +150,44 @@ export function AdminDashboard() {
           </div>
         )}
 
-        {/* KPI grid */}
+        {/* Revenue KPIs */}
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Kpi
+            icon={DollarSign}
+            label="MRR"
+            value={kpis?.mrr ?? 0}
+            sub={`${kpis?.active_paying ?? 0} paying · $${(
+              kpis?.arr ?? 0
+            ).toLocaleString()} ARR`}
+            tone="emerald"
+            money
+          />
+          <Kpi
+            icon={Hourglass}
+            label="pending MRR (trials)"
+            value={kpis?.pending_mrr ?? 0}
+            sub={`${kpis?.trialing ?? 0} on trial`}
+            tone="sky"
+            money
+          />
+          <Kpi
+            icon={TrendingUp}
+            label="active subscribers"
+            value={kpis?.active_subscribers ?? 0}
+            sub={`${kpis?.past_due ?? 0} past due`}
+            tone="violet"
+          />
+          <Kpi
+            icon={UserPlus}
+            label="new today"
+            value={kpis?.new_24h ?? 0}
+            sub={`${kpis?.new_7d ?? 0} in 7 days`}
+            tone="amber"
+            live
+          />
+        </div>
+
+        {/* Engagement KPIs */}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Kpi
             icon={Users}
@@ -147,14 +195,6 @@ export function AdminDashboard() {
             value={kpis?.total_students ?? 0}
             sub={`${kpis?.active_subscribers ?? 0} paid`}
             tone="emerald"
-          />
-          <Kpi
-            icon={UserPlus}
-            label="new today"
-            value={kpis?.new_24h ?? 0}
-            sub={`${kpis?.new_7d ?? 0} in 7 days`}
-            tone="sky"
-            live
           />
           <Kpi
             icon={MessageSquare}
@@ -202,6 +242,7 @@ export function AdminDashboard() {
                 <tr className="border-b border-white/10">
                   <th className="px-4 py-2.5 font-semibold">student</th>
                   <th className="px-3 py-2.5 font-semibold">tier</th>
+                  <th className="px-3 py-2.5 font-semibold">billing</th>
                   <th className="px-3 py-2.5 font-semibold">joined</th>
                   <th className="px-3 py-2.5 font-semibold">last active</th>
                   <th className="px-3 py-2.5 text-right font-semibold">logins</th>
@@ -236,6 +277,12 @@ export function AdminDashboard() {
                       </td>
                       <td className="px-3 py-2.5">
                         <TierPill tier={s.tier} />
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <BillingCell
+                          status={s.subscription_status}
+                          endsAt={s.current_period_ends_at}
+                        />
                       </td>
                       <td className="px-3 py-2.5 text-zinc-400">
                         {fmtDate(s.joined_at)}
@@ -277,7 +324,7 @@ export function AdminDashboard() {
                     </tr>
                     {openId === s.id && (
                       <tr className="border-b border-white/5 bg-zinc-950/40">
-                        <td colSpan={12} className="px-4 py-3">
+                        <td colSpan={13} className="px-4 py-3">
                           <div className="text-[10px] font-semibold uppercase tracking-wider text-emerald-300">
                             recent chat queries + searches
                           </div>
@@ -340,7 +387,7 @@ export function AdminDashboard() {
                 {students.length === 0 && (
                   <tr>
                     <td
-                      colSpan={12}
+                      colSpan={13}
                       className="px-4 py-8 text-center text-zinc-500"
                     >
                       no students match.
@@ -363,6 +410,7 @@ function Kpi({
   sub,
   tone,
   live,
+  money,
 }: {
   icon: typeof Users;
   label: string;
@@ -370,6 +418,7 @@ function Kpi({
   sub: string;
   tone: "emerald" | "sky" | "violet" | "amber";
   live?: boolean;
+  money?: boolean;
 }) {
   const ring = {
     emerald: "ring-emerald-400/30 bg-emerald-500/10 text-emerald-300",
@@ -393,7 +442,12 @@ function Kpi({
         )}
       </div>
       <div className="mt-2 text-2xl font-bold text-white">
-        {value.toLocaleString()}
+        {money
+          ? `$${value.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}`
+          : value.toLocaleString()}
       </div>
       <div className="text-[11px] font-medium uppercase tracking-wider text-zinc-400">
         {label}
@@ -416,6 +470,53 @@ function TierPill({ tier }: { tier: string }) {
       {tier || "free"}
     </span>
   );
+}
+
+function BillingCell({
+  status,
+  endsAt,
+}: {
+  status: string | null;
+  endsAt: string | null;
+}) {
+  if (!status || status === "canceled" || status === "free") {
+    return <span className="text-zinc-600">—</span>;
+  }
+  const left = endsAt ? daysLeft(endsAt) : null;
+  if (status === "trialing") {
+    return (
+      <span className="inline-flex flex-col">
+        <span className="text-[11px] font-semibold text-sky-300">trial</span>
+        {left !== null && (
+          <span className="text-[10px] text-zinc-500">
+            {left <= 0 ? "ends today" : `${left}d left`}
+          </span>
+        )}
+      </span>
+    );
+  }
+  if (status === "active") {
+    return (
+      <span className="inline-flex flex-col">
+        <span className="text-[11px] font-semibold text-emerald-300">active</span>
+        {left !== null && (
+          <span className="text-[10px] text-zinc-500">renews {left}d</span>
+        )}
+      </span>
+    );
+  }
+  if (status === "past_due") {
+    return (
+      <span className="text-[11px] font-semibold text-rose-300">past due</span>
+    );
+  }
+  return <span className="text-[11px] text-zinc-400">{status}</span>;
+}
+
+// Whole days from now until the ISO timestamp (negative clamped to 0).
+function daysLeft(iso: string): number {
+  const diff = new Date(iso).getTime() - Date.now();
+  return Math.max(0, Math.ceil(diff / 86400_000));
 }
 
 function fmtDate(iso: string) {
